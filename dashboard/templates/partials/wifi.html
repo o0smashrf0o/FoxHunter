@@ -1,0 +1,30 @@
+<section class="tab-pane active" id="tab-wifi">
+  <div class="panel">
+    <h2>Wi‑Fi survey</h2>
+    <div class="acq-strip" id="wifi-acq">
+      <div class="acq-cell"><span class="k">Contacts</span><span class="v" id="wifi-acq-count">0</span></div>
+      <div class="acq-cell"><span class="k">Adapter</span><span class="v" id="wifi-acq-iface">—</span></div>
+      <div class="acq-cell"><span class="k">Strongest</span><span class="v" id="wifi-acq-best">—</span></div>
+    </div>
+    <div class="row">
+      <label class="muted">Source
+        <select id="wifi-source">
+          <option value="panda_wlan1">Panda / wlan1</option>
+          <option value="alfa_wlan">Alfa</option>
+          <option value="builtin_wlan0">Onboard wlan0</option>
+        </select>
+      </label>
+      <button class="primary" type="button" onclick="scanWifi()">Scan</button>
+      <button type="button" onclick="clearDevices('wifi')">Clear</button>
+      <span id="wifi-status" class="muted"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="grid" id="wifi-table">
+        <thead>
+          <tr><th>SSID</th><th>BSSID</th><th>RSSI</th><th>Ch</th><th>Enc</th><th>Vendor</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>

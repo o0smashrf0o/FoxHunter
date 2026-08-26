@@ -1,0 +1,59 @@
+tools:
+  camera_detect:
+    name: Wireless camera detector
+    kind: detect
+    required: [wifi_monitor]
+    missing_hint: "Plug in a USB Wi-Fi adapter (Panda/Alfa). Onboard Wi-Fi is for internet."
+
+  flock_detect:
+    name: Flock / ALPR camera detector
+    kind: detect
+    any_of: [[wifi_monitor], [bt_hci_scan]]
+    missing_hint: "Needs USB Wi-Fi and/or Bluetooth."
+
+  rogue_ap_detect:
+    name: Rogue / Pineapple AP detector
+    kind: detect
+    required: [wifi_monitor]
+    missing_hint: "Plug in a USB Wi-Fi capture adapter."
+
+  tracker_detect:
+    name: Tracker suite (AirTag, Tile…)
+    kind: detect
+    required: [bt_hci_scan]
+    missing_hint: "Needs a Bluetooth HCI adapter."
+
+  ble_inspector:
+    name: BLE advertisement inspector
+    kind: detect
+    required: [bt_hci_scan]
+    missing_hint: "No Bluetooth HCI adapter found."
+
+  drone_rid_detect:
+    name: Drone Remote ID detector
+    kind: detect
+    any_of: [[wifi_monitor], [bt_hci_scan]]
+    missing_hint: "Needs USB Wi-Fi and/or Bluetooth."
+
+  device_scout:
+    name: Device Scout (persistence)
+    kind: detect
+    any_of: [[wifi_monitor], [bt_hci_scan]]
+    missing_hint: "Needs Wi-Fi capture and/or Bluetooth."
+
+  spectrum_baseline:
+    name: 2.4 GHz spectrum baseline
+    kind: detect
+    required: [sdr_rx]
+    missing_hint: "Needs an SDR (RTL-SDR, LimeSDR, or HackRF)."
+
+  blue_sonar:
+    name: Blue Sonar (BT RSSI track)
+    kind: utility
+    required: [bt_hci_scan]
+    missing_hint: "Needs HCI Bluetooth (not Ubertooth)."
+
+  nmap:
+    name: Nmap
+    kind: utility
+    required: []

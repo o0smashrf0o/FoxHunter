@@ -1,0 +1,318 @@
+#!/bin/bash
+
+if [ x"$(command -v id 2> /dev/null)" != "x" ]
+then
+  USERID="$(id -u 2> /dev/null)"
+fi
+
+if [ "x${USERID}" = "x" ] && [ "x${UID}" != "x" ]
+then
+  USERID=${UID}
+fi
+
+if [ x${USERID} != "x" ] && [ x${USERID} != "x0" ]
+then
+  printf "Run it as root\n"
+  exit 1
+fi
+
+usage() {
+  printf "\nUsage: ${0} --target <mac address> [--sleep 1]\n"
+  printf "\t-h,\t--help,     \tShow this help menu\n"
+  printf "\t-t,\t--target,   \tRequired: specify target mac address, ex: 00:11:22:33:44:55\n"
+  printf "\t-i,\t--interface,\tSpecify which bluetooth device to use, defaults to hci0\n"
+  printf "\t-s,\t--sleep,    \tSpecify how long to sleep between pings, defaults to 1\n"
+  printf "\t-v,\t--verbose,  \tShow l2ping output, mostly for debugging\n"
+  printf "\n"
+}
+
+rfkill_check() {
+	#take phy and check blocks
+	if [ "${RFKILL}" = 0 ]; then
+		#immediately return if rfkill isn't supported
+		return 0
+	fi
+	if [ -z "${1}" ]; then
+		printf "Fatal, rfkill_check requires a phy to be passed in\n"
+		exit 1
+	fi
+	#first we have to find the rfkill index
+	#this is available as /sys/class/net/wlan0/phy80211/rfkill## but that's a bit difficult to parse
+	index="$(rfkill list | grep ${1} | awk -F: '{print $1}')"
+	if [ -z "$index" ]; then
+		return 187
+	fi
+	rfkill_status="$(rfkill list ${index} 2>&1)"
+	if [ $? != 0 ]; then
+		printf "rfkill error: ${rfkill_status}\n"
+		return 187
+	elif [ -z "${rfkill_status}" ]; then
+		printf "rfkill had no output, something went wrong.\n"
+		exit 1
+	else
+		soft=$(printf "${rfkill_status}" | grep -i soft | awk '{print $3}')
+		hard=$(printf "${rfkill_status}" | grep -i hard | awk '{print $3}')
+		if [ "${soft}" = "yes" ] && [ "${hard}" = "no" ]; then
+			return 1
+		elif [ "${soft}" = "no" ] && [ "${hard}" = "yes" ]; then
+			return 2
+		elif [ "${soft}" = "yes" ] && [ "${hard}" = "yes" ]; then
+			return 3
+		fi
+	fi
+	return 0
+}
+
+rfkill_unblock() {
+	#attempt unblock and CHECK SUCCESS
+	if [ "${RFKILL}" = 0 ]; then
+		#immediately return if rfkill isn't supported
+		return 0
+	fi
+	rfkill_status="$(rfkill unblock ${1#phy} 2>&1)"
+	if [ $? != 0 ]; then
+		rfkill_status="$(rfkill unblock $index 2>&1)"
+		if [ $? != 0 ]; then
+			if [ `echo "$blah" | grep "Usage" | wc -l` -eq 1 ]; then
+				printf "Missing parameters in rfkill! Report this"
+			else
+				printf "rfkill error: ${rfkill_status}\n"
+			fi
+			printf "Unable to unblock.\n"
+			return 1
+		fi
+	fi
+
+	sleep 1
+	return 0
+}
+
+yesorno() {
+	read input
+	case $input in
+		y) return 0 ;;
+		yes) return 0 ;;
+		n) return 1 ;;
+		no) return 1 ;;
+		*) printf "\nInvalid input. Yes, or no? [y/n] "
+		   yesorno;;
+	esac
+}
+
+readonly PROGRESS='#####################################################################'
+readonly red=$'\e[0;31m'
+readonly end=$'\e[0m'
+readonly ISNUMBER='^[0-9.]+$'
+readonly ISMAC='^([a-fA-F0-9]{2}:){5}[a-fA-F0-9]{2}$'
+radio="hci0"
+target=""
+sleep="1"
+quiet="0"
+minrssi=128
+maxrssi=-128
+sim="0"
+
+control_c() {
+  kill ${l2pid} 2> /dev/null
+  printf "\n"
+  if [ "${minrssi}" != "-128" ]; then
+    printf "MIN RSSI: ${minrssi}\n"
+  fi
+  if [ "${maxrssi}" != "128" ]; then
+    printf "MAX RSSI: ${maxrssi}\n"
+  fi
+  printf "Thanks for tracking with blue_sonar.\n"
+  exit 0
+}
+
+#parse args
+while true; do
+  case $1 in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -i|--interface)
+      if [ -n "${2}" ]; then
+        if hciconfig "${2}" > /dev/zero 2>&1; then
+          radio="${2}"
+          shift
+        else
+          printf "Error: unable to find interface ${2}\n"
+        fi
+      else
+        printf "Error: ${1} requires a non-empty option argument\n"
+        usage
+        exit 1
+      fi
+      ;;
+    -v|--verbose)
+      quiet="1"
+      ;;
+    -s|--sleep)
+      if [ -n "${2}" ]; then
+        if [[ ${2} =~ ${ISNUMBER} ]]; then
+          sleep="${2}"
+          shift
+        else
+          printf "Error: sleep argument expects a number, not ${2}\n"
+          usage
+          exit 1
+        fi
+      fi
+      ;;
+    -t|--target)
+      if [ -n "${2}" ]; then
+        if [[ ${2} =~ ${ISMAC} ]]; then
+          target="${2}"
+          shift
+        else
+          printf "Error: target argument expects a valid mac address, not ${2}\n"
+          usage
+          exit 1
+        fi
+      else
+        printf "Error: ${1} requires a non-empty option argument\n"
+      fi
+      ;;
+    --sim)
+      sim="1"
+      rssi="-70"
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      break
+      ;;
+  esac
+  shift
+done
+if [ -z "${target}" ] && [ "${sim}" != "1" ]; then
+  printf "target must be specified, please use -t or --target to specify one\n"
+  usage
+  exit 1
+fi
+
+# deconflict with blue hydra also running
+blue_hydra_pid_check=$(ps -ef | grep -v grep | grep -i 'bluehydra')
+blue_hydra_config_file="/etc/blue_hydra/blue_hydra.yml"
+if [ -f /etc/blue_hydra/blue_hydra.yml ]; then
+  # get interface that blue hydra is using
+  blue_hydra_interface=$(grep 'bt_device' $blue_hydra_config_file | awk -F: '{print $2}' | sed 's/^ //g')
+  if [[ "${radio}" = "${blue_hydra_interface}" ]] && [[ -n $blue_hydra_pid_check ]]; then
+    echo "Blue Hydra is already running on the specified bluetooth interface."
+    echo "Select a different interface with -i or --interface and run this script again."
+    usage
+    exit 1
+  fi
+fi
+
+trap control_c INT
+trap control_c TERM
+
+if [ -c /dev/rfkill ]; then
+	if [ ! -x "$(command -v rfkill 2>&1)" ];then
+		printf "Your kernel supports rfkill but you don't have rfkill installed.\n"
+		printf "To ensure devices are unblocked you must install rfkill.\n"
+		RFKILL=0
+	else
+		RFKILL=1
+	fi
+else
+	RFKILL=0
+fi
+
+rfkill_check ${radio}
+rfkill_retcode="$?"
+case ${rfkill_retcode} in
+  1) printf "\t${radio} is soft blocked, please run \"rfkill unblock ${index}\" to use this interface.\n" ;;
+  2) printf "\t${radio} is hard blocked, please flip the hardware bluetooth switch (or in BIOS) to on.\n"
+    printf "\tIt may also be possible to unblock with \"rfkill unblock ${index}\"\n"
+    ;;
+  3) printf "\t${radio} is hard and soft blocked, please flip the hardware bluetooth switch to on or plug in the dongle.\n"
+    printf "\tIt may also be needed to unblock with \"rfkill unblock ${index}\"\n"
+    ;;
+esac
+if [ "${rfkill_retcode}" != 0 ]; then
+  printf "rfkill error, unable to start ${radio}\n\n"
+  printf "Would you like to try and automatically resolve this? [y/n] "
+  yesorno
+  retcode="$?"
+  if [ "${retcode}" = "1" ]; then
+    printf "\tAutomatic unblocking with rfkill will not be used.\nMake sure that a valid bluetooth interface was selected.\nExiting.\n"
+    exit 1
+  elif [ "${retcode}" = "0" ]; then
+    rfkill_unblock ${radio}
+  fi
+fi
+
+if [ -x "$(command -v rc-service 2>&1)" ]; then
+  rc-service bluetooth status > /dev/null 2>&1 || rc-service bluetooth start > /dev/null 2>&1
+elif [ -x "$(command -v service)" ]; then
+  service bluetooth status > /dev/null 2>&1 || service bluetooth start > /dev/null 2>&1
+fi
+
+while true; do
+  if [ "${sim}" = "1" ]; then
+    true
+  elif [ -n "${l2pid}" ] && ps -p "${l2pid}" > /dev/null 2>&1; then
+    true
+  else
+    if [ "${quiet}" = "1" ]; then
+      l2ping -i "${radio}" -t 1 -d "${sleep}" "${target}" 2> /dev/null &
+      l2pid=$!
+    else
+      l2ping -i "${radio}" -t 1 -d "${sleep}" "${target}" >/dev/null 2> /dev/null &
+      l2pid=$!
+    fi
+
+    sleep 1
+  fi
+  if [ "${sim}" = "0" ] && ! rssi="$(hcitool -i "${radio}" rssi "${target}" 2> /dev/null | awk '{print $4}')"; then
+    printf "Out of range or not connected\n"
+    sleep ${sleep}
+    continue
+  elif [ -z "${rssi}" ]; then
+    printf "Out of range or not connected\n"
+    sleep ${sleep}
+    continue
+  else
+    if [ "${sim}" = "1" ]; then
+      rssi=$((rssi + 1))
+      if [ "${rssi}" = "21" ]; then
+        control_c
+      fi
+    fi
+    #max seen rssi was 20, expected numbers are negative
+    #color progress bar red for areas not seen
+    bars=$((rssi + 65))
+    if [ ${bars} -lt 0 ] || [ ${bars} = 0 ]; then
+      printf -- "RSSI: ${rssi}  ${PROGRESS:0:1}${red}${PROGRESS:1}${end}\n"
+    elif [ ${bars} -gt 69 ]; then
+      if [ "${rssi}" -lt 10 ] && [ ${rssi} -gt -1 ]; then
+        printf -- "RSSI:   ${rssi}  ${PROGRESS}\n"
+      else
+        printf -- "RSSI:  ${rssi}  ${PROGRESS}\n"
+      fi
+    else
+      if [ ${rssi} -ge 10 ]; then
+        printf -- "RSSI:  ${rssi}  ${PROGRESS:0:${bars}}${red}${PROGRESS:${bars}}${end}\n"
+      elif [ ${rssi} -lt 10 ] && [ ${rssi} -gt -1 ]; then
+        printf -- "RSSI:   ${rssi}  ${PROGRESS:0:${bars}}${red}${PROGRESS:${bars}}${end}\n"
+      elif [ ${rssi} -lt 1 ] && [ ${rssi} -gt -10 ]; then
+        printf -- "RSSI:  ${rssi}  ${PROGRESS:0:${bars}}${red}${PROGRESS:${bars}}${end}\n"
+      else
+        printf -- "RSSI: ${rssi}  ${PROGRESS:0:${bars}}${red}${PROGRESS:${bars}}${end}\n"
+      fi
+    fi
+  fi
+  if [ ${rssi} -lt ${minrssi} ]; then
+    minrssi="${rssi}"
+  fi
+  if [ ${rssi} -gt ${maxrssi} ]; then
+    maxrssi="${rssi}"
+  fi
+  sleep "${sleep}"
+done

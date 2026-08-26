@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>SmashDeck</title>
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <div class="brand-wrap">
+      <img class="brand-mark" src="{{ url_for('static', filename='img/fox-mark.svg') }}" alt="" />
+      <div>
+        <div class="brand">SMASHDECK</div>
+        <div class="brand-sub">WIRELESS HUNT · RF DECK</div>
+      </div>
+    </div>
+    <div id="header-version" class="pill">v—</div>
+    <div class="hud-pills">
+      <div id="pill-hunt" class="pill hot">STATUS · IDLE</div>
+      <div id="header-stats" class="pill">—</div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="main-tabs">
+    <button class="tab active" data-tab="wifi">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M5 12a7 7 0 0 1 14 0"/><path d="M8.5 15a4.5 4.5 0 0 1 7 0"/><circle cx="12" cy="18.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+      Wi‑Fi
+    </button>
+    <button class="tab" data-tab="bt">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></svg>
+      Bluetooth
+    </button>
+    <button class="tab" data-tab="detect">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+      Detect
+    </button>
+    <button class="tab" data-tab="kismet">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 13V4"/><path d="M8 8c2-3 6-3 8 0"/><path d="M5 20h14l-2-7H7z"/></svg>
+      Kismet
+    </button>
+    <button class="tab" data-tab="tools">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M14 7l3-3 3 3-3 3M4 20l7-7"/><path d="M15 8l-3 3"/></svg>
+      Tools
+    </button>
+    <button class="tab" data-tab="findings">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 10v5M12 17.5v.5"/></svg>
+      Findings
+    </button>
+    <button class="tab" data-tab="system">
+      <svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 14V9M12 16V8M16 13V11"/></svg>
+      System
+    </button>
+  </nav>
+
+  <main>
+    {% include 'partials/wifi.html' %}
+    {% include 'partials/bt.html' %}
+    {% include 'partials/detect.html' %}
+    {% include 'partials/kismet.html' %}
+    {% include 'partials/tools.html' %}
+    {% include 'partials/findings.html' %}
+    {% include 'partials/system.html' %}
+  </main>
+
+  <aside id="detail-panel">
+    <div class="row">
+      <h2 id="detail-title" style="flex:1">Device</h2>
+      <button type="button" onclick="closeDetailPanel()">Close</button>
+    </div>
+    <dl id="detail-info"></dl>
+    <div id="detail-actions"></div>
+    <div id="detail-output"></div>
+  </aside>
+</div>
+
+<script src="{{ url_for('static', filename='js/01_core.js') }}"></script>
+<script src="{{ url_for('static', filename='js/02_wifi.js') }}"></script>
+<script src="{{ url_for('static', filename='js/03_bt.js') }}"></script>
+<script src="{{ url_for('static', filename='js/04_detail.js') }}"></script>
+<script src="{{ url_for('static', filename='js/05_detect.js') }}"></script>
+<script src="{{ url_for('static', filename='js/06_kismet_tools.js') }}"></script>
+</body>
+</html>

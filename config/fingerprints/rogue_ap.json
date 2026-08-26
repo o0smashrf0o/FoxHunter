@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "description": "Rogue / research AP fingerprints (Pineapple, Pwnagotchi, etc.)",
+  "signatures": [
+    {
+      "id": "pineapple",
+      "label": "Hak5 WiFi Pineapple (heuristic)",
+      "confidence": 70,
+      "ssid_regex": ["(?i)pineapple", "(?i)^Pineapple_", "(?i)wifipineapple"],
+      "vendor_regex": ["(?i)hak5", "(?i)pineapple"]
+    },
+    {
+      "id": "pwnagotchi",
+      "label": "Pwnagotchi",
+      "confidence": 90,
+      "ssid_regex": ["(?i)pwnagotchi", "(?i)^pwngrid", "(?i)pwn[-_]?grid"],
+      "vendor_regex": ["(?i)pwnagotchi"]
+    },
+    {
+      "id": "open_free_wifi",
+      "label": "Suspicious open 'Free WiFi' lure",
+      "confidence": 40,
+      "ssid_regex": ["(?i)^free.?wifi$", "(?i)^free.?internet$", "(?i)^airport.?free", "(?i)^starbucks.?free"],
+      "open_only": true
+    }
+  ]
+}

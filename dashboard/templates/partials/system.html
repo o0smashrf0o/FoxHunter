@@ -1,0 +1,17 @@
+<section class="tab-pane" id="tab-system">
+  <div class="panel">
+    <h2>System</h2>
+    <div class="row">
+      <button class="primary" type="button" onclick="loadChecks()">Run checks</button>
+      <button type="button" onclick="loadSources()">Detect hardware</button>
+    </div>
+    <div class="spectrum">
+      <span class="cap">DECK HEALTH</span>
+      <svg viewBox="0 0 400 72" preserveAspectRatio="none" aria-hidden="true">
+        <polyline fill="none" stroke="#b8ff2a" stroke-width="1.6"
+          points="0,40 16,38 32,42 48,30 64,36 80,22 96,28 112,18 128,34 144,20 160,32 176,24 192,40 208,16 224,28 240,22 256,36 272,18 288,30 304,14 320,34 336,26 352,42 368,28 384,38 400,32"/>
+      </svg>
+    </div>
+    <pre id="system-output" style="white-space:pre-wrap;background:#0a0712;border:1px solid var(--border);border-radius:8px;padding:0.6rem;min-height:200px;font-size:0.85rem;margin-top:0.6rem"></pre>
+  </div>
+</section>

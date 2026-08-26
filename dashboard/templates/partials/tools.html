@@ -1,0 +1,19 @@
+<section class="tab-pane" id="tab-tools">
+  <div class="panel">
+    <h2>Tools</h2>
+    <div class="row">
+      <label class="muted">Tool
+        <select id="tool-name">
+          <option value="nmap">nmap</option>
+          <option value="nuclei">nuclei</option>
+          <option value="blue_sonar">blue_sonar</option>
+        </select>
+      </label>
+      <label class="muted">Target
+        <input id="tool-target" type="text" placeholder="IP / URL / BT MAC" style="min-width:180px" />
+      </label>
+      <button class="primary" type="button" onclick="launchTool()">Launch</button>
+    </div>
+    <pre id="tool-output" class="muted" style="white-space:pre-wrap;background:#0a0712;border:1px solid var(--border);border-radius:8px;padding:0.6rem;min-height:120px"></pre>
+  </div>
+</section>

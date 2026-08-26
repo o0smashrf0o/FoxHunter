@@ -1,0 +1,25 @@
+# SmashDeck — scoped passwordless privileges for RF / wireless tools.
+# Installed to /etc/sudoers.d/smashdeck (mode 0440).
+# Do NOT grant ALL=(ALL) NOPASSWD here.
+
+Defaults!SMASHDECK_CMDS !requiretty
+
+Cmnd_Alias SMASHDECK_CMDS = \
+    /usr/sbin/ip, /sbin/ip, /bin/ip, \
+    /usr/sbin/iw, /sbin/iw, /usr/bin/iw, \
+    /usr/sbin/iwconfig, /sbin/iwconfig, /usr/bin/iwconfig, \
+    /usr/sbin/rfkill, /sbin/rfkill, /usr/bin/rfkill, \
+    /usr/sbin/airmon-ng, /usr/bin/airmon-ng, \
+    /usr/sbin/airodump-ng, /usr/bin/airodump-ng, \
+    /usr/sbin/aireplay-ng, /usr/bin/aireplay-ng, \
+    /usr/sbin/aircrack-ng, /usr/bin/aircrack-ng, \
+    /usr/bin/kismet, /usr/bin/kismet_server, /usr/bin/kismet_cap_linux_wifi, \
+    /usr/bin/kismet_cap_linux_bluetooth, \
+    /usr/bin/bluetoothctl, /bin/bluetoothctl, \
+    /usr/bin/l2ping, /usr/bin/sdptool, /usr/bin/hcitool, \
+    /usr/bin/hciconfig, /bin/hciconfig, \
+    /usr/bin/timeout, /bin/timeout, \
+    /opt/smashdeck/third_party/blue_sonar/blue_sonar, \
+    /usr/bin/pkill, /bin/pkill, /usr/bin/kill, /bin/kill
+
+%smashdeck_ops ALL=(root) NOPASSWD: SMASHDECK_CMDS

@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "description": "Wireless security camera fingerprints (SSID / OUI / name heuristics)",
+  "brands": [
+    {
+      "id": "ring",
+      "label": "Ring",
+      "confidence": 85,
+      "ssid_regex": ["(?i)^ring[-_ ]", "(?i)ring[- ]cam", "(?i)^ring$"],
+      "oui_prefixes": ["18:B4:30", "64:16:66", "90:48:9A", "B0:09:DA", "FC:67:1F"],
+      "name_regex": ["(?i)ring"]
+    },
+    {
+      "id": "nest",
+      "label": "Google Nest",
+      "confidence": 80,
+      "ssid_regex": ["(?i)^nest[-_ ]", "(?i)nestcam", "(?i)^google.?nest"],
+      "oui_prefixes": ["18:B4:30", "54:60:09", "F4:F5:D8", "64:16:66"],
+      "name_regex": ["(?i)nest"]
+    },
+    {
+      "id": "arlo",
+      "label": "Arlo",
+      "confidence": 85,
+      "ssid_regex": ["(?i)^arlo", "(?i)arlo[-_]?cam"],
+      "oui_prefixes": ["40:5D:82", "B4:75:0E", "9C:3D:CF", "A0:04:60"],
+      "name_regex": ["(?i)arlo"]
+    },
+    {
+      "id": "wyze",
+      "label": "Wyze",
+      "confidence": 80,
+      "ssid_regex": ["(?i)^wyze", "(?i)wyzecam"],
+      "oui_prefixes": ["2C:AA:8E", "7C:78:B2", "D0:3F:27"],
+      "name_regex": ["(?i)wyze"]
+    },
+    {
+      "id": "blink",
+      "label": "Blink (Amazon)",
+      "confidence": 80,
+      "ssid_regex": ["(?i)^blink", "(?i)blink[-_]?xt"],
+      "oui_prefixes": ["00:FC:8B", "40:B4:CD", "74:C2:46"],
+      "name_regex": ["(?i)blink"]
+    },
+    {
+      "id": "eufy",
+      "label": "Eufy",
+      "confidence": 80,
+      "ssid_regex": ["(?i)^eufy", "(?i)eufycam"],
+      "oui_prefixes": ["8C:85:80", "B0:BE:76"],
+      "name_regex": ["(?i)eufy"]
+    },
+    {
+      "id": "reolink",
+      "label": "Reolink",
+      "confidence": 75,
+      "ssid_regex": ["(?i)^reolink", "(?i)reolink[-_]?"],
+      "oui_prefixes": ["EC:71:DB", "9C:A5:25"],
+      "name_regex": ["(?i)reolink"]
+    },
+    {
+      "id": "hikvision",
+      "label": "Hikvision",
+      "confidence": 75,
+      "ssid_regex": ["(?i)hikvision", "(?i)^hik[-_]?"],
+      "oui_prefixes": ["C0:56:E3", "44:19:B6", "BC:AD:28"],
+      "name_regex": ["(?i)hikvision"]
+    },
+    {
+      "id": "dahua",
+      "label": "Dahua",
+      "confidence": 75,
+      "ssid_regex": ["(?i)dahua", "(?i)^dh[-_]"],
+      "oui_prefixes": ["3C:EF:8C", "08:ED:ED", "90:02:A9"],
+      "name_regex": ["(?i)dahua"]
+    },
+    {
+      "id": "axis",
+      "label": "Axis",
+      "confidence": 70,
+      "ssid_regex": ["(?i)^axis[-_]", "(?i)axis-cam"],
+      "oui_prefixes": ["00:40:8C", "AC:CC:8E", "B8:A4:4F"],
+      "name_regex": ["(?i)^axis"]
+    },
+    {
+      "id": "tp_link_tapo",
+      "label": "TP-Link Tapo / Kasa cam",
+      "confidence": 70,
+      "ssid_regex": ["(?i)^tapo", "(?i)kasa[-_]?cam", "(?i)^tplink[-_]?cam"],
+      "oui_prefixes": ["50:C7:BF", "B0:BE:76", "98:DA:C4"],
+      "name_regex": ["(?i)tapo", "(?i)kasa"]
+    },
+    {
+      "id": "generic_ipcam",
+      "label": "Generic IP camera (heuristic)",
+      "confidence": 45,
+      "ssid_regex": ["(?i)ipcam", "(?i)ip[-_]?camera", "(?i)^cam[-_]?[0-9]", "(?i)dvr[-_]?cam", "(?i)nvr[-_]"],
+      "oui_prefixes": [],
+      "name_regex": ["(?i)ipcam", "(?i)camera"]
+    }
+  ]
+}

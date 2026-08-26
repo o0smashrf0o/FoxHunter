@@ -1,0 +1,17 @@
+<section class="tab-pane" id="tab-findings">
+  <div class="panel">
+    <h2>Findings</h2>
+    <div class="row">
+      <button class="primary" type="button" onclick="loadFindings()">Refresh</button>
+      <a class="muted" href="/export_findings" target="_blank" style="color:var(--accent2)">Export markdown</a>
+    </div>
+    <div class="table-wrap">
+      <table class="grid" id="findings-table">
+        <thead>
+          <tr><th>ID</th><th>Tool</th><th>Severity</th><th>Target</th><th>Summary</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>

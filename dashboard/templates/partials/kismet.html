@@ -1,0 +1,19 @@
+<section class="tab-pane" id="tab-kismet">
+  <div class="panel">
+    <h2>Kismet</h2>
+    <div class="row">
+      <button class="primary" type="button" onclick="kismetStart()">Start</button>
+      <button type="button" onclick="kismetStop()">Stop</button>
+      <button type="button" onclick="kismetRefresh()">Refresh devices</button>
+      <span id="kismet-status" class="muted">—</span>
+    </div>
+    <div class="table-wrap" style="max-height:65vh">
+      <table class="grid" id="kismet-table">
+        <thead>
+          <tr><th>Name/SSID</th><th>MAC</th><th>RSSI</th><th>Type</th><th>Vendor</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>

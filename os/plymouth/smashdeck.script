@@ -1,0 +1,17 @@
+Window.SetBackgroundTopColor(0.03, 0.02, 0.06);
+Window.SetBackgroundBottomColor(0.03, 0.02, 0.06);
+
+title.image = Image.Text("SMASHDECK OS", 1, 0.72, 0.16, 1, "Sans 16");
+title.sprite = Sprite(title.image);
+title.sprite.SetX(Window.GetWidth() / 2 - title.image.GetWidth() / 2);
+title.sprite.SetY(Window.GetHeight() / 2 - 24);
+
+sub.image = Image.Text("WIRELESS HUNT", 0.70, 0.30, 1, 1, "Sans 10");
+sub.sprite = Sprite(sub.image);
+sub.sprite.SetX(Window.GetWidth() / 2 - sub.image.GetWidth() / 2);
+sub.sprite.SetY(Window.GetHeight() / 2 + 12);
+
+fun refresh_callback() {
+  sub.sprite.SetOpacity(0.55 + 0.45 * Math.Sin(Plymouth.GetTime() * 3));
+}
+Plymouth.SetRefreshFunction(refresh_callback);

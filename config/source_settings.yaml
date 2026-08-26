@@ -1,0 +1,36 @@
+# SmashDeck adapter mapping (logical name → interface hints)
+
+wifi_sources:
+  panda_wlan1:
+    label: Panda PAU06
+    iface: wlan1
+    caps: [monitor, inject, deauth]
+    kismet_source: "wlan1:name=Panda"
+  alfa_wlan:
+    label: Alfa AC600
+    iface: wlan2
+    caps: [monitor, inject, deauth, dual_band]
+    kismet_source: "wlan2:name=Alfa"
+  builtin_wlan0:
+    label: Onboard Wi-Fi (internet)
+    iface: wlan0
+    caps: [managed]
+    capture: false
+
+bt_sources:
+  ud100_hci1:
+    label: UD100 USB BT
+    hci: hci1
+    scan_type: active
+  builtin_hci0:
+    label: Onboard BT
+    hci: hci0
+    scan_type: active
+  ubertooth:
+    label: Ubertooth One
+    scan_type: passive
+    kismet_source: "ubertooth:name=Ubertooth,channel=37,channel_hoprate=0"
+
+defaults:
+  wifi: panda_wlan1
+  bt: ud100_hci1

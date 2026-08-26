@@ -1,0 +1,31 @@
+<section class="tab-pane" id="tab-bt">
+  <div class="panel">
+    <h2>Bluetooth</h2>
+    <div class="acq-strip" id="bt-acq">
+      <div class="acq-cell"><span class="k">Contacts</span><span class="v" id="bt-acq-count">0</span></div>
+      <div class="acq-cell"><span class="k">Adapter</span><span class="v" id="bt-acq-iface">—</span></div>
+      <div class="acq-cell"><span class="k">Strongest</span><span class="v" id="bt-acq-best">—</span></div>
+    </div>
+    <div class="row">
+      <label class="muted">Source
+        <select id="bt-source">
+          <option value="ud100_hci1">UD100 / hci1</option>
+          <option value="builtin_hci0">Onboard hci0</option>
+          <option value="ubertooth">Ubertooth (passive)</option>
+        </select>
+      </label>
+      <button class="primary" type="button" onclick="scanBt()">Scan</button>
+      <button type="button" onclick="clearDevices('bt')">Clear</button>
+      <span id="bt-status" class="muted"></span>
+    </div>
+    <p class="muted">Tap a device for Info, Locate RSSI, Blue Sonar, l2ping, Pair. HCI only — not Ubertooth.</p>
+    <div class="table-wrap">
+      <table class="grid" id="bt-table">
+        <thead>
+          <tr><th>Name</th><th>MAC</th><th>RSSI</th><th>Type</th><th>Vendor</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>

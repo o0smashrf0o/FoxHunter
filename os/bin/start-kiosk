@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Wait for dashboard, then open the light WebKit kiosk (Chromium last).
+set -euo pipefail
+PREFIX="${SMASHDECK_PREFIX:-/opt/smashdeck}"
+URL="${SMASHDECK_URL:-http://127.0.0.1:8080/}"
+export DISPLAY="${DISPLAY:-:0}"
+
+for _ in $(seq 1 40); do
+  if curl -sf -o /dev/null "$URL"; then
+    break
+  fi
+  sleep 0.25
+done
+
+if [[ -x "$PREFIX/smashdeck-kiosk" ]]; then
+  exec python3 "$PREFIX/smashdeck-kiosk" "$URL"
+fi
+if command -v epiphany-browser >/dev/null 2>&1; then
+  exec epiphany-browser --application-mode "$URL"
+fi
+if command -v epiphany >/dev/null 2>&1; then
+  exec epiphany --application-mode "$URL"
+fi
+if command -v chromium-browser >/dev/null 2>&1; then
+  exec chromium-browser --kiosk --start-fullscreen --disable-extensions \
+    --disable-background-networking --renderer-process-limit=1 \
+    --noerrdialogs --disable-infobars "$URL"
+fi
+exec xdg-open "$URL"

@@ -1,0 +1,28 @@
+# pi-gen config for SmashDeck OS (64-bit).
+# Used by scripts/build-os-image.sh — do not run pi-gen without that wrapper.
+
+IMG_NAME="SmashDeckOS"
+PI_GEN_RELEASE="SmashDeck OS"
+RELEASE="trixie"
+ARCH="arm64"
+
+LOCALE_DEFAULT="en_US.UTF-8"
+TARGET_HOSTNAME="smashdeck"
+KEYBOARD_KEYMAP="us"
+KEYBOARD_LAYOUT="English (US)"
+TIMEZONE_DEFAULT="America/New_York"
+
+FIRST_USER_NAME="smash"
+FIRST_USER_PASS="smash"
+DISABLE_FIRST_BOOT_USER_RENAME=1
+PASSWORDLESS_SUDO=0
+ENABLE_SSH=1
+ENABLE_CLOUD_INIT=0
+
+WPA_COUNTRY="US"
+
+DEPLOY_COMPRESSION="zip"
+COMPRESSION_LEVEL=6
+
+# Lite base + SmashDeck kiosk stage (skip PIXEL desktop).
+STAGE_LIST="stage0 stage1 stage2 ../stage-smashdeck"

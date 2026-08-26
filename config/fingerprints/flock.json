@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "description": "Flock Safety and similar ALPR / fixed surveillance Wi-Fi+BLE hints",
+  "wifi": [
+    {
+      "id": "flock_ssid",
+      "label": "Flock Safety (SSID)",
+      "confidence": 90,
+      "ssid_regex": ["(?i)flock", "(?i)^FS[-_]", "(?i)flocksafety"]
+    },
+    {
+      "id": "flock_oui",
+      "label": "Flock Safety (OUI)",
+      "confidence": 75,
+      "oui_prefixes": ["F0:9F:C2", "70:B3:D5"]
+    }
+  ],
+  "ble": [
+    {
+      "id": "flock_ble_name",
+      "label": "Flock Safety (BLE name)",
+      "confidence": 85,
+      "name_regex": ["(?i)flock", "(?i)flocksafety"]
+    }
+  ],
+  "notes": "OUI/SSID lists are best-effort public heuristics; verify on site. Expand via config without code changes."
+}

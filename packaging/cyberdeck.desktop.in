@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=SmashDeck
+Exec=@PREFIX@/smashdeck-gui --mode kiosk
+TryExec=@PREFIX@/smashdeck-gui
+Icon=@ICON@
+Terminal=false
+Categories=Network;Utility;

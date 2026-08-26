@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.bootstrap_complete
+.DS_Store
+.idea/
+.vscode/
+
+/data/
+/dist/
+*.log
+
+os/stage-smashdeck/01-smashdeck/files/

@@ -1,0 +1,314 @@
+#!/usr/bin/env python3
+"""
+SmashDeck GUI controller — install / update / daily launch.
+Double-click SmashDeck.desktop or run via smashdeck-media-start.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+MEDIA_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(MEDIA_ROOT))
+
+from packaging.constants import (  # noqa: E402
+    INSTALL_PREFIX,
+    canonical_install_prefix,
+    is_installed,
+    read_version,
+    user_data_dir,
+    validate_install_paths,
+)
+from packaging import gui_dialogs as gui  # noqa: E402
+from packaging.sudo_gui import run_privileged  # noqa: E402
+
+DASHBOARD_PORT = 8080
+
+
+def _env_for_app(prefix: Path) -> dict:
+    env = os.environ.copy()
+    env["SMASHDECK_DATA"] = str(user_data_dir())
+    env["SMASHDECK_PREFIX"] = str(prefix)
+    if os.environ.get("SMASHDECK_DEV"):
+        env["SMASHDECK_DEV"] = "1"
+    return env
+
+
+def dashboard_up(port: int = DASHBOARD_PORT) -> bool:
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.4):
+            return True
+    except OSError:
+        return False
+
+
+def stop_dashboard() -> None:
+    for pat in ("dashboard/app.py", str(INSTALL_PREFIX / "dashboard" / "app.py")):
+        try:
+            out = subprocess.check_output(["pgrep", "-f", pat], text=True, stderr=subprocess.DEVNULL)
+            for pid in out.split():
+                try:
+                    os.kill(int(pid), 15)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+
+def venv_python(prefix: Path) -> str:
+    p = prefix / ".venv" / "bin" / "python"
+    return str(p) if p.is_file() else sys.executable
+
+
+def start_dashboard(prefix: Path) -> bool:
+    if dashboard_up():
+        return True
+    py = venv_python(prefix)
+    app = prefix / "dashboard" / "app.py"
+    log = user_data_dir() / "logs" / "dashboard" / "dashboard.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    env = _env_for_app(prefix)
+    try:
+        logf = open(log, "a")
+        subprocess.Popen(
+            [py, str(app)],
+            cwd=str(prefix / "dashboard"),
+            stdout=logf,
+            stderr=subprocess.STDOUT,
+            env=env,
+            start_new_session=True,
+        )
+    except Exception as e:
+        gui.error(f"Failed to start dashboard:\n{e}")
+        return False
+    for _ in range(40):
+        time.sleep(0.25)
+        if dashboard_up():
+            return True
+    return dashboard_up()
+
+
+def _which(name: str) -> bool:
+    return subprocess.call(["which", name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
+
+
+def _webkit_ok() -> bool:
+    try:
+        import gi
+        gi.require_version("Gtk", "3.0")
+        try:
+            gi.require_version("WebKit2", "4.1")
+        except ValueError:
+            gi.require_version("WebKit2", "4.0")
+        from gi.repository import Gtk, WebKit2  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+def launch_browser(mode: str = "app") -> None:
+    """Prefer WebKit kiosk (light on Pi). Chromium is last resort."""
+    url = f"http://127.0.0.1:{DASHBOARD_PORT}/"
+    prefix = Path(os.environ.get("SMASHDECK_PREFIX") or INSTALL_PREFIX)
+    kiosk = prefix / "smashdeck-kiosk"
+    if not kiosk.is_file():
+        kiosk = MEDIA_ROOT / "smashdeck-kiosk"
+
+    # 1) GTK WebKit — typically ~80–150MB vs Chromium 400MB+
+    if kiosk.is_file() and _webkit_ok():
+        try:
+            subprocess.Popen(
+                [sys.executable, str(kiosk), url],
+                start_new_session=True,
+            )
+            return
+        except Exception:
+            pass
+
+    # 2) GNOME Web / cog (also WebKit)
+    if mode == "kiosk" and _which("cog"):
+        subprocess.Popen(["cog", url], start_new_session=True)
+        return
+    if _which("epiphany-browser") or _which("epiphany"):
+        bin_ = "epiphany-browser" if _which("epiphany-browser") else "epiphany"
+        args = [bin_, "--application-mode", url]
+        if mode == "kiosk":
+            args.insert(1, "--new-window")
+        subprocess.Popen(args, start_new_session=True)
+        return
+
+    # 3) Chromium with a tight memory budget
+    bin_ = next((c for c in ("chromium-browser", "chromium", "google-chrome", "chrome") if _which(c)), None)
+    if not bin_:
+        try:
+            subprocess.Popen(["xdg-open", url])
+        except Exception:
+            pass
+        return
+    args = [
+        bin_,
+        "--disable-extensions",
+        "--disable-background-networking",
+        "--disable-sync",
+        "--disable-translate",
+        "--disable-features=TranslateUI,MediaRouter,AudioServiceOutOfProcess",
+        "--disable-session-crashed-bubble",
+        "--disable-restore-session-state",
+        "--disable-dev-shm-usage",
+        "--renderer-process-limit=1",
+        "--process-per-site",
+        "--js-flags=--max-old-space-size=128",
+        "--disk-cache-size=8388608",
+        "--no-first-run",
+        "--noerrdialogs",
+        "--disable-infobars",
+        "--check-for-update-interval=31536000",
+    ]
+    if mode == "kiosk":
+        args += ["--kiosk", "--start-fullscreen", url]
+    else:
+        args += ["--new-window", f"--app={url}"]
+    try:
+        subprocess.Popen(args, start_new_session=True)
+    except Exception:
+        subprocess.Popen(["xdg-open", url])
+
+
+def healthy_install(prefix: Path) -> bool:
+    return (prefix / "dashboard" / "app.py").is_file() and (prefix / "smashdeck-gui").is_file()
+
+
+def do_launch(prefix: Path, mode: str = "app") -> int:
+    if not healthy_install(prefix):
+        gui.error("SmashDeck install looks incomplete.\nRe-run setup from install media.")
+        return 1
+    prog = gui.Progress("SmashDeck", "Starting…")
+    try:
+        prog.update(40, "Starting dashboard…")
+        if not start_dashboard(prefix):
+            prog.close()
+            gui.error("Dashboard did not start. Check logs in ~/.local/share/smashdeck/logs/")
+            return 1
+        prog.update(80, "Opening interface…")
+        launch_browser(mode)
+        prog.update(100, "Ready")
+        time.sleep(0.4)
+    finally:
+        prog.close()
+    return 0
+
+
+def do_install(media: Path, replace: bool = False) -> int:
+    try:
+        media, prefix = validate_install_paths(media, canonical_install_prefix())
+    except ValueError as e:
+        gui.error(f"Invalid paths:\n{e}")
+        return 1
+    if not gui.confirm(
+        "Install SmashDeck to /opt/smashdeck?\n\n"
+        "You will be asked for the administrator password once.\n"
+        "Surveys and settings stay in your user folder.",
+        title="Install SmashDeck",
+    ):
+        return 0
+    prog = gui.Progress("SmashDeck Install", "Administrator password…")
+    try:
+        prog.update(10, "Copying files & installing packages…")
+        args = ["install", "--source", str(media), "--profile", "full"]
+        if replace:
+            args.append("--replace")
+        rc = run_privileged(media, args)
+        if rc != 0:
+            prog.close()
+            gui.error("Install failed. See terminal/log output from privileged setup.")
+            return rc
+        prog.update(90, "Starting…")
+        time.sleep(0.5)
+    finally:
+        prog.close()
+    gui.info(
+        "SmashDeck installed.\n\n"
+        "Use the SmashDeck menu icon next time.\n"
+        f"Data: {user_data_dir()}",
+        title="Install complete",
+    )
+    return do_launch(canonical_install_prefix(), "kiosk")
+
+
+def do_upgrade(media: Path) -> int:
+    if not gui.confirm(
+        f"Update SmashDeck?\nMedia: {read_version(media)}\n"
+        f"Installed: {read_version(INSTALL_PREFIX) if is_installed() else 'none'}\n\n"
+        "User data will be kept.",
+        title="Update SmashDeck",
+    ):
+        return 0
+    return do_install(media, replace=True)
+
+
+def main() -> int:
+    # heal desktop if present
+    try:
+        from packaging.heal_media_desktop import heal_media_launchers
+        heal_media_launchers(MEDIA_ROOT)
+    except Exception:
+        pass
+
+    ap = argparse.ArgumentParser(description="SmashDeck")
+    ap.add_argument("--mode", choices=["app", "kiosk"], default="kiosk")
+    ap.add_argument("--dev", action="store_true", help="Run from media tree without /opt")
+    ap.add_argument("--install", action="store_true")
+    ap.add_argument("--settings", action="store_true")
+    args = ap.parse_args()
+
+    media = MEDIA_ROOT
+    prefix = canonical_install_prefix()
+
+    if args.dev or os.environ.get("SMASHDECK_DEV"):
+        os.environ["SMASHDECK_DEV"] = "1"
+        return do_launch(media, args.mode)
+
+    if args.install or not is_installed():
+        if is_installed() and not args.install:
+            # installed but launched from media — offer update or launch
+            choice = gui.choose(
+                "SmashDeck is already installed.",
+                [
+                    ("launch", "Launch installed SmashDeck"),
+                    ("update", "Update from this folder"),
+                    ("cancel", "Cancel"),
+                ],
+                title="SmashDeck",
+            )
+            if choice == "update":
+                return do_upgrade(media)
+            if choice == "launch":
+                return do_launch(prefix, args.mode)
+            return 0
+        return do_install(media)
+
+    # launched from media while installed → prefer system
+    if media.resolve() != prefix.resolve() and healthy_install(prefix):
+        # if media is newer, offer update
+        try:
+            from packaging.constants import version_cmp
+            if version_cmp(read_version(media), read_version(prefix)) > 0:
+                if gui.confirm(
+                    f"Newer SmashDeck available ({read_version(media)} > {read_version(prefix)}).\nUpdate?",
+                    title="Update available",
+                ):
+                    return do_upgrade(media)
+        except Exception:
+            pass
+        return do_launch(prefix, args.mode)
+
+    return do_launch(prefix if healthy_install(prefix) else media, args.mode)
+
+
+if __name__ == "__main__":
+    sys.exit(main() or 0)

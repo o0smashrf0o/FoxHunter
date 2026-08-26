@@ -1,0 +1,29 @@
+<section class="tab-pane" id="tab-detect">
+  <div class="panel">
+    <h2>TSCM Detect</h2>
+    <p id="detect-hw-summary" class="muted">Checking hardware…</p>
+    <div class="cards" id="detect-cards"></div>
+    <div class="spectrum" id="detect-spectrum">
+      <span class="cap">SPECTRUM</span>
+      <svg viewBox="0 0 400 72" preserveAspectRatio="none" aria-hidden="true">
+        <polyline fill="none" stroke="#b44cff" stroke-width="1.6"
+          points="0,50 12,48 24,52 36,40 48,46 60,28 72,38 84,22 96,34 108,18 120,30 132,44 144,26 156,36 168,14 180,32 192,24 204,42 216,20 228,30 240,16 252,38 264,28 276,48 288,22 300,34 312,18 324,40 336,26 348,46 360,32 372,50 384,36 400,44"/>
+      </svg>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <h3 style="flex:1;margin:0" id="detect-results-title">Results</h3>
+      <button type="button" id="detect-clear-btn">Clear</button>
+    </div>
+    <p id="detect-status-text" class="muted"></p>
+    <div class="table-wrap" style="max-height:45vh">
+      <table class="grid" id="detect-table">
+        <thead>
+          <tr><th>Label</th><th>ID</th><th>Name</th><th>RSSI</th><th>Conf</th><th>Why</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>

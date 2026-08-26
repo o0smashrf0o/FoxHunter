@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "description": "BLE tracker and device-class fingerprints",
+  "signatures": [
+    {
+      "id": "airtag",
+      "label": "Apple AirTag / Find My network",
+      "confidence": 85,
+      "name_regex": ["(?i)airtag", "(?i)find.?my"],
+      "mfg_company_ids": ["004c"],
+      "notes": "Apple company ID 0x004c; Find My payload heuristics apply in parser"
+    },
+    {
+      "id": "ibeacon",
+      "label": "Apple iBeacon",
+      "confidence": 80,
+      "mfg_company_ids": ["004c"],
+      "ad_type_hint": "ibeacon",
+      "notes": "iBeacon prefix in manufacturer data"
+    },
+    {
+      "id": "tile",
+      "label": "Tile tracker",
+      "confidence": 85,
+      "name_regex": ["(?i)^tile", "(?i)tile[-_ ]"],
+      "mfg_company_ids": ["00c4"]
+    },
+    {
+      "id": "smarttag",
+      "label": "Samsung SmartTag",
+      "confidence": 85,
+      "name_regex": ["(?i)smarttag", "(?i)galaxy.?smarttag", "(?i)^ST[-_]"],
+      "mfg_company_ids": ["0075"]
+    },
+    {
+      "id": "flipper",
+      "label": "Flipper Zero",
+      "confidence": 90,
+      "name_regex": ["(?i)flipper", "(?i)^FZ[-_]"]
+    },
+    {
+      "id": "axon",
+      "label": "Axon (bodycam / LE gear heuristic)",
+      "confidence": 70,
+      "name_regex": ["(?i)axon", "(?i)taser", "(?i)body.?worn"]
+    },
+    {
+      "id": "skimmer_hc",
+      "label": "HC-03/05/06 BT module (skimmer-class)",
+      "confidence": 75,
+      "name_regex": ["(?i)^HC[-_]?0[356]", "(?i)^BT[-_]?HC"]
+    },
+    {
+      "id": "meshtastic",
+      "label": "Meshtastic",
+      "confidence": 85,
+      "name_regex": ["(?i)meshtastic", "(?i)^mesh[-_]?t"]
+    },
+    {
+      "id": "meshcore",
+      "label": "MeshCore",
+      "confidence": 80,
+      "name_regex": ["(?i)meshcore"]
+    },
+    {
+      "id": "rayban_meta",
+      "label": "Ray-Ban Meta glasses (heuristic)",
+      "confidence": 70,
+      "name_regex": ["(?i)ray[-_]?ban", "(?i)meta.?ray"]
+    }
+  ]
+}
