@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import subprocess
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from utils.oui_lookup import vendor_name
 
@@ -145,3 +145,36 @@ def hcitool_scan_bt(hci: str = "hci0", limit: int = 50) -> List[Dict[str, Any]]:
     lst = list(devices.values())
     lst.sort(key=lambda d: d.get("rssi_dbm") if d.get("rssi_dbm") is not None else -999, reverse=True)
     return lst[:limit]
+
+
+def wifi_rssi_for(mac: str, iface: str = "wlan1") -> Optional[int]:
+    mac_u = (mac or "").upper()
+    rc, out = _sudo(["iw", "dev", iface, "scan"], timeout=20)
+    if rc != 0 or not out:
+        rc, out = _run(["iw", "dev", iface, "scan"], timeout=20)
+    hit = False
+    rssi = None
+    for line in out.splitlines():
+        m = re.match(r"^BSS\s+([0-9a-f:]{17})", line, re.I)
+        if m:
+            hit = m.group(1).upper() == mac_u
+            continue
+        if hit and "signal:" in line:
+            sm = re.search(r"signal:\s*(-?\d+(?:\.\d+)?)", line)
+            if sm:
+                rssi = int(float(sm.group(1)))
+                break
+    return rssi
+
+
+def bt_rssi_for(mac: str, hci: str = "hci0") -> Optional[int]:
+    mac_u = (mac or "").upper()
+    rc, out = _sudo(["hcitool", "-i", hci, "rssi", mac_u], timeout=6)
+    m = re.search(r"(-?\d+)", out)
+    if rc == 0 and m:
+        return int(m.group(1))
+    rc, out = _sudo(["l2ping", "-i", hci, "-c", "1", "-t", "2", mac_u], timeout=8)
+    rm = re.search(r"(-?\d+)\s*dB", out, re.I)
+    if rm:
+        return int(rm.group(1))
+    return None

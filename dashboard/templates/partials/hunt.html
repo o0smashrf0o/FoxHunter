@@ -1,0 +1,33 @@
+<section class="tab-pane" id="tab-hunt">
+  <div class="panel">
+    <h2>Hunt</h2>
+    <p class="muted">Walk toward stronger RSSI. Mark a finding as SOI first, then hunt it on any adapter.</p>
+    <div class="row">
+      <label class="muted">SOI
+        <select id="hunt-soi"></select>
+      </label>
+      <label class="muted">Kind
+        <select id="hunt-kind">
+          <option value="wifi">Wi‑Fi</option>
+          <option value="bt">Bluetooth</option>
+        </select>
+      </label>
+      <label class="muted">Dongle
+        <select id="hunt-source"></select>
+      </label>
+      <button class="primary" type="button" onclick="huntStart()">Start hunt</button>
+      <button type="button" onclick="huntStop()">Stop</button>
+    </div>
+    <div class="hunt-meter">
+      <div class="hunt-meter-track"><div id="hunt-meter-fill" class="hunt-meter-fill"></div></div>
+      <div id="hunt-meter-label" class="rssi-meter-label">IDLE</div>
+    </div>
+    <div class="acq-strip">
+      <div class="acq-cell"><span class="k">Now</span><span class="v" id="hunt-now">—</span></div>
+      <div class="acq-cell"><span class="k">Min</span><span class="v" id="hunt-min">—</span></div>
+      <div class="acq-cell"><span class="k">Max</span><span class="v" id="hunt-max">—</span></div>
+      <div class="acq-cell"><span class="k">Samples</span><span class="v" id="hunt-n">0</span></div>
+    </div>
+    <canvas id="hunt-hist" width="640" height="140" class="hunt-hist"></canvas>
+  </div>
+</section>

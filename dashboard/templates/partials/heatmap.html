@@ -1,0 +1,24 @@
+<section class="tab-pane" id="tab-heatmap">
+  <div class="panel">
+    <h2>Heatmap</h2>
+    <p class="muted">Import a floorplan or area photo. Tap the map as you walk to drop RSSI from the active Hunt.</p>
+    <div class="row">
+      <label class="muted">Map
+        <select id="heat-map"></select>
+      </label>
+      <label class="muted">SOI
+        <select id="heat-soi"></select>
+      </label>
+      <label class="muted">Upload
+        <input id="heat-file" type="file" accept="image/*" />
+      </label>
+      <button class="primary" type="button" onclick="heatUpload()">Import map</button>
+      <button type="button" onclick="heatClear()">Clear marks</button>
+    </div>
+    <div id="heat-wrap" class="heat-wrap">
+      <img id="heat-img" alt="" />
+      <canvas id="heat-canvas"></canvas>
+    </div>
+    <p id="heat-status" class="muted"></p>
+  </div>
+</section>

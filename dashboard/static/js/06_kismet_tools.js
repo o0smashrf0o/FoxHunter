@@ -76,12 +76,16 @@ async function loadFindings() {
     if (!tb) return;
     var rows = '';
     (j.findings || []).forEach(function (f) {
+      var tgt = f.target || '';
+      var kind = (f.tool || '').indexOf('bt') >= 0 ? 'bt' : 'wifi';
       rows += '<tr>'
         + '<td>' + escHtml(f.id) + '</td>'
         + '<td>' + escHtml(f.tool || '') + '</td>'
         + '<td>' + escHtml(f.severity || '') + '</td>'
-        + '<td>' + escHtml(f.target || '') + '</td>'
+        + '<td>' + escHtml(tgt) + '</td>'
         + '<td>' + escHtml(f.summary || '') + '</td>'
+        + '<td><button type="button" class="primary" onclick="markSoi(\'' + escHtml(tgt) + '\',\'' + kind + '\',\'' + escHtml(f.summary || '') + '\')">SOI</button> '
+        + '<button type="button" onclick="goHunt(\'' + escHtml(tgt) + '\',\'' + kind + '\')">Hunt</button></td>'
         + '</tr>';
     });
     tb.innerHTML = rows || emptyStateHtml('NO FINDINGS', 'Tool output lands here');

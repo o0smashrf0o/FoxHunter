@@ -77,6 +77,14 @@ function showTab(name) {
   if (name === 'findings' && typeof loadFindings === 'function') loadFindings();
   if (name === 'kismet' && typeof kismetStatus === 'function') kismetStatus();
   if (name === 'system' && typeof loadChecks === 'function') loadChecks();
+  if (name === 'hunt') {
+    if (typeof loadSoiLists === 'function') loadSoiLists();
+    if (typeof loadHuntSources === 'function') loadHuntSources();
+  }
+  if (name === 'heatmap') {
+    if (typeof loadSoiLists === 'function') loadSoiLists();
+    if (typeof loadHeatMaps === 'function') loadHeatMaps();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function () {

@@ -21,6 +21,8 @@ from routes.detect import detect_bp
 from routes.tools import tools_bp
 from routes.kismet import kismet_bp
 from routes.findings import findings_bp
+from routes.hunt import hunt_bp
+from routes.heatmap import heatmap_bp
 
 app = Flask(__name__)
 app.register_blueprint(core_bp)
@@ -30,6 +32,8 @@ app.register_blueprint(detect_bp)
 app.register_blueprint(tools_bp)
 app.register_blueprint(kismet_bp)
 app.register_blueprint(findings_bp)
+app.register_blueprint(hunt_bp)
+app.register_blueprint(heatmap_bp)
 
 
 if __name__ == "__main__":

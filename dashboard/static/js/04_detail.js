@@ -43,6 +43,8 @@ function openDetailPanel(type, dev, source) {
     btns += '<button onclick="runAction(\'wifi\',\'' + mac + '\',\'info\',\'' + source + '\')">Info</button>';
     btns += '<button onclick="runAction(\'wifi\',\'' + mac + '\',\'probe\',\'' + source + '\')">Probe</button>';
     btns += '<button class="warn" onclick="runAction(\'wifi\',\'' + mac + '\',\'deauth\',\'' + source + '\')">Deauth</button>';
+    btns += '<button class="primary" type="button" onclick="markSoi(\'' + mac + '\',\'wifi\')">SOI</button>';
+    btns += '<button type="button" onclick="goHunt(\'' + mac + '\',\'wifi\')">Hunt</button>';
   } else {
     btns += '<button onclick="runAction(\'bt\',\'' + mac + '\',\'info\',\'' + source + '\')">Info</button>';
     if (!isUbertooth) {
@@ -51,6 +53,8 @@ function openDetailPanel(type, dev, source) {
       btns += '<button onclick="runAction(\'bt\',\'' + mac + '\',\'l2ping\',\'' + source + '\')">l2ping</button>';
       btns += '<button onclick="runAction(\'bt\',\'' + mac + '\',\'sdptool\',\'' + source + '\')">SDP</button>';
       btns += '<button onclick="runAction(\'bt\',\'' + mac + '\',\'pair\',\'' + source + '\')">Pair</button>';
+      btns += '<button class="primary" type="button" onclick="markSoi(\'' + mac + '\',\'bt\')">SOI</button>';
+      btns += '<button type="button" onclick="goHunt(\'' + mac + '\',\'bt\')">Hunt</button>';
     } else {
       btns += '<div class="muted">Ubertooth: passive only</div>';
     }
