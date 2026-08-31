@@ -91,9 +91,71 @@ document.addEventListener('DOMContentLoaded', function () {
   }).catch(function () {});
   if (typeof renderWifiTable === 'function') renderWifiTable();
   if (typeof renderBtTable === 'function') renderBtTable();
+  loadLiveSources();
   refreshStats();
   setInterval(refreshStats, 5000);
 });
+
+async function loadLiveSources() {
+  try {
+    var r = await fetch('/api/sources');
+    var j = await r.json();
+    var det = j.detected || {};
+    var settings = j.settings || {};
+    var wifiSel = document.getElementById('wifi-source');
+    var btSel = document.getElementById('bt-source');
+    if (wifiSel) {
+      wifiSel.innerHTML = '';
+      var wifi = det.wifi || [];
+      var named = settings.wifi_sources || {};
+      if (wifi.length) {
+        wifi.forEach(function (d) {
+          var iface = d.iface || d.id;
+          var opt = document.createElement('option');
+          opt.value = iface;
+          var label = iface;
+          Object.keys(named).forEach(function (k) {
+            if (named[k].iface === iface) label = named[k].label + ' (' + iface + ')';
+          });
+          if (d.model && d.model !== iface) label = d.model + ' (' + iface + ')';
+          opt.textContent = label;
+          wifiSel.appendChild(opt);
+        });
+      } else {
+        Object.keys(named).forEach(function (k) {
+          var opt = document.createElement('option');
+          opt.value = k;
+          opt.textContent = named[k].label || k;
+          wifiSel.appendChild(opt);
+        });
+      }
+    }
+    if (btSel) {
+      btSel.innerHTML = '';
+      var bts = det.bt || [];
+      var namedBt = settings.bt_sources || {};
+      if (bts.length) {
+        bts.forEach(function (d) {
+          var hci = d.hci || d.id;
+          var opt = document.createElement('option');
+          opt.value = hci;
+          opt.textContent = (d.model && d.model !== hci) ? (d.model + ' (' + hci + ')') : hci;
+          Object.keys(namedBt).forEach(function (k) {
+            if (namedBt[k].hci === hci) opt.textContent = namedBt[k].label + ' (' + hci + ')';
+          });
+          btSel.appendChild(opt);
+        });
+      } else {
+        Object.keys(namedBt).forEach(function (k) {
+          var opt = document.createElement('option');
+          opt.value = k;
+          opt.textContent = namedBt[k].label || k;
+          btSel.appendChild(opt);
+        });
+      }
+    }
+  } catch (e) {}
+}
 
 async function refreshStats() {
   try {

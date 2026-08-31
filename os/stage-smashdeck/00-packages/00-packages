@@ -5,7 +5,9 @@ plymouth plymouth-themes
 curl wget rsync unzip zip git
 iw wireless-tools rfkill net-tools
 bluez bluez-tools
-aircrack-ng nmap
-rtl-sdr librtlsdr-dev
+aircrack-ng nmap usbutils
+rtl-sdr librtlsdr-dev hackrf libhackrf-dev
+soapysdr-tools soapysdr-module-rtlsdr soapysdr-module-hackrf
+firmware-realtek firmware-mediatek
 zenity policykit-1
 epiphany-browser

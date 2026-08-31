@@ -1,29 +1,48 @@
 #!/usr/bin/env bash
-# Wait for dashboard, then open the light WebKit kiosk (Chromium last).
-set -euo pipefail
+# Fullscreen HUD. Chromium --kiosk is reliable on Pi OS labwc (GTK windows stay tiny).
+set +e
 PREFIX="${SMASHDECK_PREFIX:-/opt/smashdeck}"
 URL="${SMASHDECK_URL:-http://127.0.0.1:8080/}"
 export DISPLAY="${DISPLAY:-:0}"
+export GTK_A11Y=none
 
-for _ in $(seq 1 40); do
-  if curl -sf -o /dev/null "$URL"; then
-    break
-  fi
-  sleep 0.25
+# don't let the Pi panel sit on top
+killall wf-panel-pi 2>/dev/null
+killall lxpanel 2>/dev/null
+
+sleep 1
+for _ in $(seq 1 50); do
+  curl -sf -o /dev/null "$URL" && break
+  sleep 0.2
 done
 
-if [[ -x "$PREFIX/smashdeck-kiosk" ]]; then
+W=800
+H=480
+if command -v wlr-randr >/dev/null 2>&1; then
+  geo=$(wlr-randr 2>/dev/null | awk '/current/{print $1; exit}')
+  W=${geo%x*}
+  H=${geo#*x}
+fi
+W=${W:-800}
+H=${H:-480}
+
+for c in chromium-browser chromium google-chrome; do
+  if command -v "$c" >/dev/null 2>&1; then
+    exec "$c" \
+      --kiosk --start-fullscreen \
+      --window-position=0,0 \
+      --window-size="${W},${H}" \
+      --noerrdialogs --disable-infobars \
+      --disable-session-crashed-bubble \
+      --disable-translate --disable-extensions \
+      --disable-dev-shm-usage --no-first-run \
+      --check-for-update-interval=31536000 \
+      --renderer-process-limit=1 \
+      --app="$URL" "$URL"
+  fi
+done
+
+if [[ -f "$PREFIX/smashdeck-kiosk" ]]; then
   exec python3 "$PREFIX/smashdeck-kiosk" "$URL"
-fi
-if command -v epiphany-browser >/dev/null 2>&1; then
-  exec epiphany-browser --application-mode "$URL"
-fi
-if command -v epiphany >/dev/null 2>&1; then
-  exec epiphany --application-mode "$URL"
-fi
-if command -v chromium-browser >/dev/null 2>&1; then
-  exec chromium-browser --kiosk --start-fullscreen --disable-extensions \
-    --disable-background-networking --renderer-process-limit=1 \
-    --noerrdialogs --disable-infobars "$URL"
 fi
 exec xdg-open "$URL"

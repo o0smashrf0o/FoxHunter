@@ -122,9 +122,12 @@ def launch_browser(mode: str = "app") -> None:
     # 1) GTK WebKit — typically ~80–150MB vs Chromium 400MB+
     if kiosk.is_file() and _webkit_ok():
         try:
+            env = os.environ.copy()
+            env["GTK_A11Y"] = "none"
             subprocess.Popen(
                 [sys.executable, str(kiosk), url],
                 start_new_session=True,
+                env=env,
             )
             return
         except Exception:
@@ -136,10 +139,9 @@ def launch_browser(mode: str = "app") -> None:
         return
     if _which("epiphany-browser") or _which("epiphany"):
         bin_ = "epiphany-browser" if _which("epiphany-browser") else "epiphany"
-        args = [bin_, "--application-mode", url]
-        if mode == "kiosk":
-            args.insert(1, "--new-window")
-        subprocess.Popen(args, start_new_session=True)
+        env = os.environ.copy()
+        env["GTK_A11Y"] = "none"
+        subprocess.Popen([bin_, "--new-window", url], start_new_session=True, env=env)
         return
 
     # 3) Chromium with a tight memory budget

@@ -9,7 +9,8 @@ from utils.device_detector import get_device_summary
 
 BINARIES = [
     "python3", "iw", "ip", "rfkill", "hciconfig", "hcitool", "bluetoothctl",
-    "l2ping", "kismet", "nmap", "airmon-ng", "airodump-ng", "rtl_power",
+    "l2ping", "kismet", "nmap", "airmon-ng", "airodump-ng",
+    "rtl_power", "rtl_test", "hackrf_info", "hackrf_sweep", "SoapySDRUtil",
 ]
 
 

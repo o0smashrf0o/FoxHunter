@@ -28,6 +28,8 @@ def load_source_settings() -> dict:
 
 
 def resolve_wifi_iface(source_key: str = "", default: str = "wlan1") -> str:
+    if source_key.startswith("wlan"):
+        return source_key
     settings = load_source_settings()
     src = (settings.get("wifi_sources") or {}).get(source_key) or {}
     if src.get("iface"):
@@ -45,6 +47,8 @@ def resolve_wifi_iface(source_key: str = "", default: str = "wlan1") -> str:
 
 
 def resolve_bt_hci(source_key: str = "", default: str = "hci0") -> str:
+    if source_key.startswith("hci"):
+        return source_key
     settings = load_source_settings()
     src = (settings.get("bt_sources") or {}).get(source_key) or {}
     if src.get("hci"):

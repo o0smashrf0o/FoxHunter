@@ -1,0 +1,42 @@
+@define-color smash_bg #07060f;
+@define-color smash_panel #100c1c;
+@define-color smash_lime #b8ff2a;
+@define-color smash_purple #b44cff;
+@define-color smash_text #e8e4f4;
+@define-color smash_muted #8a7aa8;
+
+window, .background {
+  background-color: @smash_bg;
+  color: @smash_text;
+}
+headerbar, .titlebar, menubar, menu, .menubar, .menu {
+  background-color: @smash_panel;
+  color: @smash_lime;
+  border-color: #3a2060;
+}
+button {
+  background: #161022;
+  color: @smash_text;
+  border-color: #3a2060;
+}
+button:hover, button:checked {
+  background: #1a2a0c;
+  color: @smash_lime;
+  border-color: @smash_lime;
+}
+entry, textview {
+  background: #0a0712;
+  color: @smash_text;
+  border-color: #3a2060;
+}
+scrollbar slider {
+  background: #4a2878;
+}
+selection, *:selected {
+  background-color: #3d5a12;
+  color: @smash_lime;
+}
+tooltip {
+  background-color: @smash_panel;
+  color: @smash_text;
+}

@@ -1,15 +1,17 @@
-# SmashDeck adapter mapping (logical name → interface hints)
+# SmashDeck adapter mapping
+# Live wlan*/hci* interfaces always appear in the UI even if not listed here.
+# These entries are labels / preferred defaults only.
 
 wifi_sources:
   panda_wlan1:
-    label: Panda PAU06
+    label: Panda PAU0F / USB Wi-Fi
     iface: wlan1
-    caps: [monitor, inject, deauth]
+    caps: [monitor, inject, deauth, dual_band]
     kismet_source: "wlan1:name=Panda"
   alfa_wlan:
-    label: Alfa AC600
+    label: Alfa AWUS036AXM
     iface: wlan2
-    caps: [monitor, inject, deauth, dual_band]
+    caps: [monitor, inject, deauth, dual_band, wifi6]
     kismet_source: "wlan2:name=Alfa"
   builtin_wlan0:
     label: Onboard Wi-Fi (internet)
@@ -19,7 +21,7 @@ wifi_sources:
 
 bt_sources:
   ud100_hci1:
-    label: UD100 USB BT
+    label: SENA UD100 USB BT
     hci: hci1
     scan_type: active
   builtin_hci0:
@@ -31,6 +33,17 @@ bt_sources:
     scan_type: passive
     kismet_source: "ubertooth:name=Ubertooth,channel=37,channel_hoprate=0"
 
+sdr_sources:
+  rtl_sdr:
+    label: RTL-SDR
+    tool: rtl_power
+    caps: [rx]
+  hackrf:
+    label: HackRF One
+    tool: hackrf_sweep
+    caps: [rx, tx]
+
 defaults:
   wifi: panda_wlan1
   bt: ud100_hci1
+  sdr: rtl_sdr

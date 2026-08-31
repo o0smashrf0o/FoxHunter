@@ -1,0 +1,4 @@
+GTK_THEME=Adwaita-dark
+GTK_A11Y=none
+QT_STYLE_OVERRIDE=Adwaita-Dark
+SMASHDECK_PREFIX=/opt/smashdeck

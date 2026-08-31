@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Lightweight fullscreen WebKit kiosk. Much cheaper than Chromium on Pi."""
+"""Fullscreen WebKit kiosk for SmashDeck (Wayland/labwc + X11)."""
 from __future__ import annotations
 
+import os
 import sys
+
+os.environ.setdefault("GTK_A11Y", "none")
 
 URL = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8080/"
 
@@ -15,22 +18,26 @@ def main() -> int:
             gi.require_version("WebKit2", "4.1")
         except ValueError:
             gi.require_version("WebKit2", "4.0")
-        from gi.repository import Gtk, Gdk, WebKit2
+        from gi.repository import Gtk, Gdk, GLib, WebKit2
     except Exception as e:
         print(f"webkit kiosk unavailable: {e}", file=sys.stderr)
         return 2
 
+    GLib.set_prgname("smashdeck")
+    Gdk.set_program_class("smashdeck")
+
     win = Gtk.Window(title="SmashDeck")
     win.set_decorated(False)
-    win.fullscreen()
+    win.set_skip_taskbar_hint(True)
+    w, h = _screen_size()
+    win.set_default_size(w, h)
+    win.resize(w, h)
     win.connect("destroy", Gtk.main_quit)
     win.connect("key-press-event", _on_key)
 
     settings = WebKit2.Settings()
     settings.set_enable_javascript(True)
     settings.set_enable_developer_extras(False)
-    settings.set_enable_offline_web_application_cache(False)
-    settings.set_enable_page_cache(False)
     try:
         settings.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.ALWAYS)
     except Exception:
@@ -41,14 +48,42 @@ def main() -> int:
     view.load_uri(URL)
     win.add(view)
     win.show_all()
+    win.maximize()
+    win.fullscreen()
+    GLib.timeout_add(150, lambda: _force_full(win) or False)
+    GLib.timeout_add(800, lambda: _force_full(win) or False)
     Gtk.main()
     return 0
+
+
+def _screen_size():
+    try:
+        from gi.repository import Gdk
+        display = Gdk.Display.get_default()
+        mon = display.get_primary_monitor() or display.get_monitor(0)
+        geo = mon.get_geometry()
+        return max(geo.width, 800), max(geo.height, 480)
+    except Exception:
+        return 800, 480
+
+
+def _force_full(win) -> bool:
+    try:
+        win.maximize()
+        win.fullscreen()
+        win.present()
+    except Exception:
+        pass
+    return False
 
 
 def _on_key(win, event):
     from gi.repository import Gdk
     if event.keyval == Gdk.KEY_Escape:
         win.destroy()
+        return True
+    if event.keyval == Gdk.KEY_F11:
+        win.fullscreen()
         return True
     return False
 

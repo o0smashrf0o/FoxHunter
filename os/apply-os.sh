@@ -44,6 +44,7 @@ install_runtime_pkgs() {
     bluez bluez-tools aircrack-ng nmap
     rtl-sdr librtlsdr-dev
     zenity policykit-1
+    usbutils hackrf rtl-sdr
   )
   apt_install "${pkgs[@]}" || true
   apt-get install -y --no-install-recommends gir1.2-webkit2-4.1 || \
@@ -90,25 +91,7 @@ EOF
 
 install_plymouth() {
   log "Boot splash"
-  local dest=/usr/share/plymouth/themes/smashdeck
-  mkdir -p "$dest"
-  cp "$HERE/plymouth/smashdeck.plymouth" "$dest/"
-  cp "$HERE/plymouth/smashdeck.script" "$dest/"
-  if command -v plymouth-set-default-theme >/dev/null 2>&1; then
-    plymouth-set-default-theme smashdeck || true
-  fi
-  if [[ -f /boot/firmware/cmdline.txt ]]; then
-    local cmd=/boot/firmware/cmdline.txt
-  elif [[ -f /boot/cmdline.txt ]]; then
-    local cmd=/boot/cmdline.txt
-  else
-    return 0
-  fi
-  if ! grep -q "quiet" "$cmd"; then
-    sed -i 's/$/ quiet splash logo.nologo/' "$cmd"
-  elif ! grep -q "splash" "$cmd"; then
-    sed -i 's/$/ splash logo.nologo/' "$cmd"
-  fi
+  bash "$HERE/bin/fix-boot.sh" || true
 }
 
 install_services() {
@@ -167,6 +150,14 @@ autologin-user=${USER_NAME}
 autologin-user-timeout=0
 EOF
   fi
+
+  mkdir -p "$HOME_DIR/.config/labwc"
+  if [[ -f "$HOME_DIR/.config/labwc/autostart" ]] && grep -q start-kiosk "$HOME_DIR/.config/labwc/autostart"; then
+    :
+  else
+    echo "GTK_A11Y=none $PREFIX/os/bin/start-kiosk &" >> "$HOME_DIR/.config/labwc/autostart"
+  fi
+  chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/.config/labwc"
 }
 
 groups_and_perms() {
