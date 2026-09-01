@@ -53,12 +53,26 @@ class KismetClient:
 
     def system_status(self) -> Dict[str, Any]:
         if not self.is_port_open():
-            return {"running": False}
+            return {"running": False, "console": _log_tail(), "web": self.base}
         try:
             st = self._get("/system/status.json")
-            return {"running": True, "status": st}
+            if not isinstance(st, dict):
+                st = {}
+            sources = []
+            try:
+                sources = self.list_sources() or []
+            except Exception:
+                pass
+            return {
+                "running": True,
+                "status": st,
+                "sources": sources,
+                "summary": _status_summary(st, sources),
+                "console": _log_tail(),
+                "web": self.base,
+            }
         except Exception as e:
-            return {"running": self.is_port_open(), "error": str(e)}
+            return {"running": self.is_port_open(), "error": str(e), "console": _log_tail(), "web": self.base}
 
     def list_devices(self, limit: int = 100) -> List[Dict[str, Any]]:
         if not self.is_port_open():
@@ -112,6 +126,48 @@ class KismetClient:
 
     def add_source(self, definition: str) -> Any:
         return self._post("/datasource/add_source.cmd", {"definition": definition})
+
+
+def _log_tail(n: int = 40) -> str:
+    log = KISMET_DIR / "kismet_launch.log"
+    try:
+        lines = log.read_text(errors="replace").splitlines()
+        return "\n".join(lines[-n:])
+    except Exception:
+        return ""
+
+
+def _status_summary(st: Dict[str, Any], sources: List[Any]) -> Dict[str, Any]:
+    def g(*keys):
+        for k in keys:
+            if k in st and st[k] is not None:
+                return st[k]
+        return None
+
+    src_lines = []
+    for s in sources:
+        if not isinstance(s, dict):
+            continue
+        name = s.get("kismet.datasource.name") or s.get("kismet.datasource.interface") or "?"
+        iface = s.get("kismet.datasource.interface") or ""
+        ch = s.get("kismet.datasource.channel") or s.get("kismet.datasource.hop_cur_channel") or ""
+        run = s.get("kismet.datasource.running")
+        pkts = s.get("kismet.datasource.num_packets")
+        src_lines.append({
+            "name": name,
+            "interface": iface,
+            "channel": ch,
+            "running": run,
+            "packets": pkts,
+        })
+    return {
+        "version": g("kismet.system.version", "kismet.system.server_version"),
+        "devices": g("kismet.system.devices.count", "kismet.system.num_devices"),
+        "packet_rate": g("kismet.system.packets.rate", "kismet.system.packet_rate"),
+        "memory": g("kismet.system.memory.rss", "kismet.system.memory.rss_bytes"),
+        "started": g("kismet.system.timestamp.start_sec"),
+        "sources": src_lines,
+    }
 
 
 _client: Optional[KismetClient] = None

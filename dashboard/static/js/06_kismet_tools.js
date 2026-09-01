@@ -4,10 +4,61 @@ async function kismetStatus() {
   try {
     var r = await fetch('/api/kismet_status');
     var j = await r.json();
+    renderKismetConsole(j);
     if (el) el.textContent = j.running ? 'Running' : 'Stopped';
     if (el) el.style.color = j.running ? 'var(--accent)' : 'var(--muted)';
+    return j;
   } catch (e) {
     if (el) el.textContent = e.message;
+    return { running: false };
+  }
+}
+
+function renderKismetConsole(j) {
+  var sum = j.summary || {};
+  var run = document.getElementById('kismet-run');
+  var devs = document.getElementById('kismet-devs');
+  var rate = document.getElementById('kismet-rate');
+  var nsrc = document.getElementById('kismet-nsrc');
+  var cons = document.getElementById('kismet-console');
+  var web = document.getElementById('kismet-web');
+  var srcs = sum.sources || [];
+  if (run) run.textContent = j.running ? 'UP' : 'DOWN';
+  if (devs) devs.textContent = sum.devices != null ? String(sum.devices) : '—';
+  if (rate) rate.textContent = sum.packet_rate != null ? String(sum.packet_rate) : '—';
+  if (nsrc) nsrc.textContent = String(srcs.length);
+  if (web && j.web) { web.href = j.web + '/'; web.textContent = j.web + '/'; }
+  var tb = document.querySelector('#kismet-src-table tbody');
+  if (tb) {
+    var rows = '';
+    srcs.forEach(function (s) {
+      rows += '<tr>'
+        + '<td>' + escHtml(s.name || '') + '</td>'
+        + '<td>' + escHtml(s.interface || '') + '</td>'
+        + '<td>' + escHtml(s.channel != null ? s.channel : '—') + '</td>'
+        + '<td>' + (s.running ? 'yes' : 'no') + '</td>'
+        + '<td>' + escHtml(s.packets != null ? s.packets : '—') + '</td>'
+        + '</tr>';
+    });
+    tb.innerHTML = rows || '<tr><td colspan="5" class="muted">No datasources</td></tr>';
+  }
+  if (cons) {
+    var lines = [];
+    lines.push(j.running ? 'Kismet server running.' : 'Kismet server stopped.');
+    if (j.msg) lines.push(j.msg);
+    if (j.error) lines.push('Error: ' + j.error);
+    if (sum.version) lines.push('Version: ' + sum.version);
+    if (sum.devices != null) lines.push('Devices: ' + sum.devices);
+    if (sum.packet_rate != null) lines.push('Packet rate: ' + sum.packet_rate);
+    srcs.forEach(function (s) {
+      lines.push('Source ' + (s.name || '?') + ' iface=' + (s.interface || '') + ' ch=' + (s.channel || '') + ' running=' + s.running);
+    });
+    if (j.console) {
+      lines.push('');
+      lines.push('--- launch log ---');
+      lines.push(j.console);
+    }
+    cons.textContent = lines.join('\n');
   }
 }
 
@@ -22,7 +73,7 @@ async function kismetStart() {
       el.style.color = j.ok ? 'var(--accent)' : 'var(--danger)';
     }
     if (typeof syncWifiContinuousBtn === 'function') syncWifiContinuousBtn();
-    await kismetRefresh();
+    await kismetStatus();
   } catch (e) {
     if (el) el.textContent = e.message;
   }
@@ -37,23 +88,6 @@ async function kismetStop() {
 
 async function kismetRefresh() {
   await kismetStatus();
-  try {
-    var r = await fetch('/api/kismet_devices_live');
-    var j = await r.json();
-    var tb = document.querySelector('#kismet-table tbody');
-    if (!tb) return;
-    var rows = '';
-    (j.devices || []).forEach(function (d) {
-      rows += '<tr>'
-        + '<td>' + escHtml(d.ssid || d.name || '') + '</td>'
-        + '<td style="font-family:monospace;font-size:12px">' + escHtml(d.mac || '') + '</td>'
-        + '<td>' + (d.rssi_dbm != null ? d.rssi_dbm : '—') + '</td>'
-        + '<td>' + escHtml(d.type || '') + '</td>'
-        + '<td>' + escHtml(d.vendor || '') + '</td>'
-        + '</tr>';
-    });
-    tb.innerHTML = rows || emptyStateHtml('NO CONTACTS', 'Start Kismet then refresh devices');
-  } catch (e) {}
 }
 
 async function launchTool() {

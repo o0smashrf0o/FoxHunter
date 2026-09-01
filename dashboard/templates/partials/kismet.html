@@ -1,19 +1,28 @@
 <section class="tab-pane" id="tab-kismet">
   <div class="panel">
-    <h2>Kismet</h2>
+    <h2>Kismet server</h2>
+    <p class="muted">Server control only. Device lists live on the Wi‑Fi tab (Continuous) after this server is running.</p>
     <div class="row">
       <button class="primary" type="button" onclick="kismetStart()">Start</button>
       <button type="button" onclick="kismetStop()">Stop</button>
-      <button type="button" onclick="kismetRefresh()">Refresh devices</button>
+      <button type="button" onclick="kismetRefresh()">Refresh</button>
       <span id="kismet-status" class="muted">—</span>
     </div>
-    <div class="table-wrap" style="max-height:65vh">
-      <table class="grid" id="kismet-table">
+    <div class="acq-strip" id="kismet-acq">
+      <div class="acq-cell"><span class="k">State</span><span class="v" id="kismet-run">—</span></div>
+      <div class="acq-cell"><span class="k">Devices</span><span class="v" id="kismet-devs">—</span></div>
+      <div class="acq-cell"><span class="k">Pkt/s</span><span class="v" id="kismet-rate">—</span></div>
+      <div class="acq-cell"><span class="k">Sources</span><span class="v" id="kismet-nsrc">—</span></div>
+    </div>
+    <div class="table-wrap" style="max-height:28vh">
+      <table class="grid" id="kismet-src-table">
         <thead>
-          <tr><th>Name/SSID</th><th>MAC</th><th>RSSI</th><th>Type</th><th>Vendor</th></tr>
+          <tr><th>Source</th><th>Interface</th><th>Channel</th><th>Running</th><th>Packets</th></tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
+    <pre id="kismet-console" class="kismet-console">Kismet console — press Start</pre>
+    <p class="muted">Web UI (if needed): <a id="kismet-web" href="http://127.0.0.1:2501/" target="_blank" style="color:var(--accent2)">http://127.0.0.1:2501/</a></p>
   </div>
 </section>

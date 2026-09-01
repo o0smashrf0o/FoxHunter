@@ -123,6 +123,19 @@ header.app-header::after {
   color: var(--text);
 }
 .win-btn.win-close { color: var(--danger); border-color: #6a2020; }
+.kismet-console {
+  white-space: pre-wrap;
+  background: #0a0712;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem;
+  min-height: 140px;
+  max-height: 32vh;
+  overflow: auto;
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin-top: 0.6rem;
+}
 .tip-wrap { position: relative; display: inline-block; }
 .tip-wrap .tip {
   display: none;
