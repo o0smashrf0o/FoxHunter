@@ -26,21 +26,13 @@ html, body {
   user-select: none;
 }
 body {
-  background:
-    linear-gradient(180deg, rgba(7, 6, 15, 0.55) 0%, rgba(7, 6, 15, 0.82) 38%, #07060f 72%),
-    url("../img/fox-hunter.jpg") top center / cover no-repeat fixed,
-    #07060f;
+  background: #07060f;
 }
-body::before {
-  content: "";
-  pointer-events: none;
-  position: fixed; inset: 0; z-index: 80;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0, transparent 2px,
-    rgba(0, 0, 0, 0.08) 3px
-  );
-  opacity: 0.35;
+body.hud-ready {
+  background:
+    linear-gradient(180deg, rgba(7, 6, 15, 0.72) 0%, #07060f 55%),
+    url("../img/fox-hunter.jpg") top center / cover no-repeat,
+    #07060f;
 }
 body::after {
   content: "";

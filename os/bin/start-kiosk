@@ -10,7 +10,7 @@ export GTK_A11Y=none
 killall wf-panel-pi 2>/dev/null
 killall lxpanel 2>/dev/null
 
-sleep 1
+sleep 2
 for _ in $(seq 1 50); do
   curl -sf -o /dev/null "$URL" && break
   sleep 0.2
@@ -32,6 +32,8 @@ for c in chromium-browser chromium google-chrome; do
       --start-fullscreen \
       --window-position=0,0 \
       --window-size="${W},${H}" \
+      --disable-gpu --disable-gpu-compositing --in-process-gpu \
+      --disable-smooth-scrolling \
       --noerrdialogs --disable-infobars \
       --disable-session-crashed-bubble \
       --disable-translate --disable-extensions \

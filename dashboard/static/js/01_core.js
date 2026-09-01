@@ -101,6 +101,10 @@ document.addEventListener('DOMContentLoaded', function () {
   }).catch(function () {});
   if (typeof renderWifiTable === 'function') renderWifiTable();
   if (typeof renderBtTable === 'function') renderBtTable();
+  requestAnimationFrame(function () {
+    document.body.classList.add('hud-ready');
+    window.dispatchEvent(new Event('resize'));
+  });
   loadLiveSources();
   refreshStats();
   setInterval(refreshStats, 5000);
