@@ -180,6 +180,27 @@ async function loadLiveSources() {
   } catch (e) {}
 }
 
+async function hudWindow(action) {
+  if (action === 'maximize') {
+    try {
+      var el = document.documentElement;
+      if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen();
+    } catch (e) {}
+  }
+  if (action === 'minimize') {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen();
+    } catch (e) {}
+  }
+  try {
+    await fetch('/api/ui/window', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action })
+    });
+  } catch (e) {}
+}
+
 async function refreshStats() {
   try {
     var r = await fetch('/api/system_stats');

@@ -123,6 +123,14 @@ header.app-header::after {
   display: flex; flex-wrap: wrap; gap: 0.4rem;
   align-items: center;
 }
+.win-btns { display: flex; gap: 0.25rem; }
+.win-btn {
+  min-width: 44px; min-height: 44px; padding: 0;
+  font-size: 1.15rem; line-height: 1;
+  border-color: var(--border);
+  color: var(--text);
+}
+.win-btn.win-close { color: var(--danger); border-color: #6a2020; }
 .pill {
   border: 1px solid var(--border);
   background: rgba(16, 12, 28, 0.85);

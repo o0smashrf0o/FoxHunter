@@ -38,3 +38,10 @@ def version():
     except Exception:
         v = "0.0.0"
     return jsonify({"version": v, "name": "SmashDeck"})
+
+
+@core_bp.route("/api/ui/window", methods=["POST"])
+def api_ui_window():
+    data = request.get_json(silent=True) or {}
+    from utils.ui_window import ui_action
+    return jsonify(ui_action(data.get("action") or ""))

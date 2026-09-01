@@ -29,7 +29,7 @@ H=${H:-480}
 for c in chromium-browser chromium google-chrome; do
   if command -v "$c" >/dev/null 2>&1; then
     exec "$c" \
-      --kiosk --start-fullscreen \
+      --start-fullscreen \
       --window-position=0,0 \
       --window-size="${W},${H}" \
       --noerrdialogs --disable-infobars \
