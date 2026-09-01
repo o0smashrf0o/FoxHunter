@@ -73,6 +73,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(function (t) {
     t.classList.toggle('active', t.getAttribute('data-tab') === name);
   });
+  if (name === 'wifi' || name === 'bt' || name === 'hunt') loadLiveSources();
   if (name === 'detect' && typeof loadDetectCapabilities === 'function') loadDetectCapabilities();
   if (name === 'findings' && typeof loadFindings === 'function') loadFindings();
   if (name === 'kismet' && typeof kismetStatus === 'function') kismetStatus();
@@ -102,7 +103,35 @@ document.addEventListener('DOMContentLoaded', function () {
   loadLiveSources();
   refreshStats();
   setInterval(refreshStats, 5000);
+  setInterval(loadLiveSources, 3000);
 });
+
+function _fillSourceSelect(sel, items, valueOf, labelOf) {
+  if (!sel) return;
+  var prev = sel.value;
+  var next = (items || []).map(function (it) {
+    return { v: valueOf(it), l: labelOf(it) };
+  });
+  var same = sel.options.length === next.length;
+  if (same) {
+    for (var i = 0; i < next.length; i++) {
+      if (sel.options[i].value !== next[i].v) { same = false; break; }
+    }
+  }
+  if (same) return;
+  sel.innerHTML = '';
+  next.forEach(function (o) {
+    var opt = document.createElement('option');
+    opt.value = o.v;
+    opt.textContent = o.l;
+    sel.appendChild(opt);
+  });
+  if (prev) {
+    for (var j = 0; j < sel.options.length; j++) {
+      if (sel.options[j].value === prev) { sel.selectedIndex = j; break; }
+    }
+  }
+}
 
 async function loadLiveSources() {
   try {
@@ -110,58 +139,44 @@ async function loadLiveSources() {
     var j = await r.json();
     var det = j.detected || {};
     var settings = j.settings || {};
-    var wifiSel = document.getElementById('wifi-source');
-    var btSel = document.getElementById('bt-source');
-    if (wifiSel) {
-      wifiSel.innerHTML = '';
-      var wifi = det.wifi || [];
-      var named = settings.wifi_sources || {};
-      if (wifi.length) {
-        wifi.forEach(function (d) {
-          var iface = d.iface || d.id;
-          var opt = document.createElement('option');
-          opt.value = iface;
-          var label = iface;
-          Object.keys(named).forEach(function (k) {
-            if (named[k].iface === iface) label = named[k].label + ' (' + iface + ')';
-          });
-          if (d.model && d.model !== iface) label = d.model + ' (' + iface + ')';
-          opt.textContent = label;
-          wifiSel.appendChild(opt);
-        });
-      } else {
+    var named = settings.wifi_sources || {};
+    var wifi = det.wifi || [];
+    var wifiItems = wifi.length ? wifi : Object.keys(named).map(function (k) {
+      return { iface: named[k].iface || k, model: named[k].label || k, _key: k };
+    });
+    _fillSourceSelect(
+      document.getElementById('wifi-source'),
+      wifiItems,
+      function (d) { return d.iface || d.id || d._key; },
+      function (d) {
+        var iface = d.iface || d.id || d._key;
+        var label = iface;
         Object.keys(named).forEach(function (k) {
-          var opt = document.createElement('option');
-          opt.value = k;
-          opt.textContent = named[k].label || k;
-          wifiSel.appendChild(opt);
+          if (named[k].iface === iface) label = named[k].label + ' (' + iface + ')';
         });
+        if (d.model && d.model !== iface) label = d.model + ' (' + iface + ')';
+        return label;
       }
-    }
-    if (btSel) {
-      btSel.innerHTML = '';
-      var bts = det.bt || [];
-      var namedBt = settings.bt_sources || {};
-      if (bts.length) {
-        bts.forEach(function (d) {
-          var hci = d.hci || d.id;
-          var opt = document.createElement('option');
-          opt.value = hci;
-          opt.textContent = (d.model && d.model !== hci) ? (d.model + ' (' + hci + ')') : hci;
-          Object.keys(namedBt).forEach(function (k) {
-            if (namedBt[k].hci === hci) opt.textContent = namedBt[k].label + ' (' + hci + ')';
-          });
-          btSel.appendChild(opt);
-        });
-      } else {
+    );
+    var namedBt = settings.bt_sources || {};
+    var bts = det.bt || [];
+    var btItems = bts.length ? bts : Object.keys(namedBt).map(function (k) {
+      return { hci: namedBt[k].hci || k, model: namedBt[k].label || k, _key: k };
+    });
+    _fillSourceSelect(
+      document.getElementById('bt-source'),
+      btItems,
+      function (d) { return d.hci || d.id || d._key; },
+      function (d) {
+        var hci = d.hci || d.id || d._key;
+        var label = (d.model && d.model !== hci) ? (d.model + ' (' + hci + ')') : hci;
         Object.keys(namedBt).forEach(function (k) {
-          var opt = document.createElement('option');
-          opt.value = k;
-          opt.textContent = namedBt[k].label || k;
-          btSel.appendChild(opt);
+          if (namedBt[k].hci === hci) label = namedBt[k].label + ' (' + hci + ')';
         });
+        return label;
       }
-    }
+    );
+    if (typeof loadHuntSources === 'function') loadHuntSources();
   } catch (e) {}
 }
 
