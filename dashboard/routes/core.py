@@ -40,6 +40,22 @@ def version():
     return jsonify({"version": v, "name": "SmashDeck"})
 
 
+@core_bp.route("/api/auth", methods=["GET", "POST"])
+def api_auth():
+    from utils import auth
+    if request.method == "GET":
+        return jsonify({"enabled": auth.auth_enabled()})
+    data = request.get_json(silent=True) or {}
+    if data.get("clear"):
+        auth.clear_password()
+        return jsonify({"ok": True, "enabled": False})
+    pw = data.get("password") or ""
+    if len(pw) < 4:
+        return jsonify({"ok": False, "error": "Password must be at least 4 characters"}), 400
+    auth.set_password(pw)
+    return jsonify({"ok": True, "enabled": True})
+
+
 @core_bp.route("/api/ui/window", methods=["POST"])
 def api_ui_window():
     data = request.get_json(silent=True) or {}

@@ -205,6 +205,34 @@ def do_launch(prefix: Path, mode: str = "app") -> int:
     return 0
 
 
+def _offer_hud_password() -> None:
+    choice = gui.choose(
+        "Protect the SmashDeck HUD with a password?\n\n"
+        "You can skip this. Change it later on the System tab.",
+        [
+            ("set", "Set a password"),
+            ("none", "No password"),
+        ],
+        title="SmashDeck password",
+    )
+    if choice != "set":
+        return
+    p1 = gui.password("New HUD password")
+    p2 = gui.password("Confirm password")
+    if not p1 or p1 != p2:
+        gui.error("Passwords did not match. HUD will have no password.\nSet one later on the System tab.")
+        return
+    if len(p1) < 4:
+        gui.error("Password too short. HUD will have no password.")
+        return
+    try:
+        os.environ.setdefault("SMASHDECK_DATA", str(user_data_dir()))
+        from utils.auth import set_password
+        set_password(p1)
+    except Exception as e:
+        gui.error(f"Could not save password:\n{e}")
+
+
 def do_install(media: Path, replace: bool = False) -> int:
     try:
         media, prefix = validate_install_paths(media, canonical_install_prefix())
@@ -233,6 +261,7 @@ def do_install(media: Path, replace: bool = False) -> int:
         time.sleep(0.5)
     finally:
         prog.close()
+    _offer_hud_password()
     gui.info(
         "SmashDeck installed.\n\n"
         "Use the SmashDeck menu icon next time.\n"

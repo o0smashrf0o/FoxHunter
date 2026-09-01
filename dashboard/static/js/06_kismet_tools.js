@@ -132,6 +132,31 @@ async function loadFindings() {
   } catch (e) {}
 }
 
+async function setHudPassword() {
+  var p1 = window.prompt("New HUD password (min 4 characters)");
+  if (p1 == null) return;
+  var p2 = window.prompt("Confirm password");
+  if (p1 !== p2) { alert("Passwords did not match"); return; }
+  var r = await fetch('/api/auth', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: p1 })
+  });
+  var j = await r.json();
+  var el = document.getElementById('auth-status');
+  if (el) el.textContent = j.ok ? 'Password set — used next unlock' : (j.error || 'failed');
+}
+
+async function clearHudPassword() {
+  if (!window.confirm("Remove HUD password?")) return;
+  var r = await fetch('/api/auth', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clear: true })
+  });
+  var j = await r.json();
+  var el = document.getElementById('auth-status');
+  if (el) el.textContent = j.ok ? 'No password' : 'failed';
+}
+
 async function loadChecks() {
   var out = document.getElementById('system-output');
   if (out) out.textContent = 'Running checks…';

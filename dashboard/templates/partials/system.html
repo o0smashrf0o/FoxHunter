@@ -5,6 +5,11 @@
       <button class="primary" type="button" onclick="loadChecks()">Run checks</button>
       <button type="button" onclick="loadSources()">Detect hardware</button>
     </div>
+    <div class="row">
+      <button class="primary" type="button" onclick="setHudPassword()">Set HUD password</button>
+      <button type="button" onclick="clearHudPassword()">Remove HUD password</button>
+      <span id="auth-status" class="muted"></span>
+    </div>
     <div class="spectrum">
       <span class="cap">DECK HEALTH</span>
       <svg viewBox="0 0 400 72" preserveAspectRatio="none" aria-hidden="true">

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SmashDeck login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+</head>
+<body class="hud-ready">
+<div id="app" style="align-items:center;justify-content:center;padding:2rem">
+  <div class="panel" style="max-width:420px;width:100%">
+    <h2>SmashDeck</h2>
+    <p class="muted">Enter HUD password</p>
+    {% if error %}<p style="color:var(--danger)">{{ error }}</p>{% endif %}
+    <form method="post" action="/login">
+      <input type="password" name="password" autofocus
+        style="width:100%;min-height:44px;margin:0.5rem 0;background:#0a0712;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0.5rem" />
+      <button class="primary" type="submit" style="width:100%">Unlock</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

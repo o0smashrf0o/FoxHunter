@@ -59,6 +59,22 @@ def choose(text: str, options: Sequence[Tuple[str, str]], title: str = "SmashDec
     return None
 
 
+def password(text: str = "Password", title: str = "SmashDeck") -> Optional[str]:
+    if _has_zenity():
+        try:
+            out = subprocess.check_output(
+                ["zenity", "--password", f"--title={title}", f"--text={text}", "--width=360"],
+                text=True,
+            )
+            return (out or "").strip()
+        except Exception:
+            return None
+    try:
+        return input(f"{text}: ").strip()
+    except Exception:
+        return None
+
+
 class Progress:
     def __init__(self, title: str, text: str = ""):
         self.title = title

@@ -3,7 +3,7 @@
 Raspberry Pi OS (Debian) + SmashDeck + WebKit kiosk.
 Not a kernel fork — a branded image / convert script.
 
-Default user: `smash` / `smash`  (change after first boot)
+Linux user is created on first boot (Pi wizard). SmashDeck HUD password is optional at install.
 
 ## Convert the Pi you already have (fast)
 

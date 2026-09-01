@@ -18,7 +18,8 @@ GUI install — double-click, enter admin password once, go.
 1. Copy this folder (or a `dist/smashdeck-install-*` release) to the Pi.
 2. Double-click **SmashDeck.desktop** (or run `./smashdeck-media-start`).
 3. Follow the installer (admin password once).
-4. Launch **SmashDeck** from the app menu afterward.
+4. Optional: set a HUD password when asked, or skip.
+5. Launch **SmashDeck** from the app menu afterward.
 
 Install path: `/opt/smashdeck`  
 User data: `~/.local/share/smashdeck/`
