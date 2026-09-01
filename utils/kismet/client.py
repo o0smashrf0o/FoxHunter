@@ -124,29 +124,69 @@ def get_client() -> KismetClient:
     return _client
 
 
+def _wifi_source_def() -> str:
+    try:
+        from utils.device_detector import get_device_summary
+        for d in get_device_summary().get("wifi") or []:
+            iface = d.get("iface") or d.get("id") or ""
+            if iface and iface != "wlan0":
+                return f"{iface}:name=SmashDeck"
+    except Exception:
+        pass
+    return ""
+
+
 def ensure_kismet(extra_source: str = "") -> Tuple[bool, str]:
-    """Start kismet if needed (best-effort)."""
+    """Start kismet as a daemon and keep it running."""
     c = get_client()
+    src = extra_source or _wifi_source_def()
     if c.is_port_open():
-        if extra_source:
+        if src:
             try:
-                c.add_source(extra_source)
+                c.add_source(src)
             except Exception:
                 pass
         return True, "Kismet already running"
+    ensure_data_dirs()
     log = KISMET_DIR / "kismet_launch.log"
-    cmd = ["kismet", "--no-ncurses", "-t", "smashdeck"]
-    if extra_source:
-        cmd += ["-c", extra_source]
-    try:
-        logf = open(log, "a")
-        subprocess.Popen(cmd, stdout=logf, stderr=subprocess.STDOUT, start_new_session=True)
-    except FileNotFoundError:
-        return False, "kismet not installed"
-    except Exception as e:
-        return False, str(e)
-    for _ in range(20):
-        time.sleep(0.5)
-        if c.is_port_open():
-            return True, "Kismet started"
-    return False, "Kismet start timeout"
+    homedir = str(KISMET_DIR)
+    base = ["--no-ncurses", "--daemonize"]
+    if src:
+        base += ["-c", src]
+    attempts = [
+        ["sudo", "-n", "kismet"] + base,
+        ["kismet"] + base,
+        ["sudo", "-n", "kismet", "--no-ncurses"],
+        ["kismet", "--no-ncurses"],
+    ]
+    last_err = "kismet not installed"
+    logf = open(log, "a")
+    logf.write(f"\n--- launch {time.strftime('%Y-%m-%d %H:%M:%S')} src={src}\n")
+    logf.flush()
+    for cmd in attempts:
+        try:
+            subprocess.Popen(
+                cmd,
+                cwd=homedir,
+                stdout=logf,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+                env={**os.environ, "HOME": homedir},
+            )
+        except FileNotFoundError:
+            last_err = "kismet not installed"
+            continue
+        except Exception as e:
+            last_err = str(e)
+            continue
+        for _ in range(30):
+            time.sleep(0.4)
+            if c.is_port_open():
+                if src:
+                    try:
+                        c.add_source(src)
+                    except Exception:
+                        pass
+                return True, "Kismet started"
+        last_err = "Kismet start timeout — see data/kismet/kismet_launch.log"
+    return False, last_err

@@ -11,6 +11,10 @@
         <select id="wifi-source"></select>
       </label>
       <button class="primary" type="button" onclick="scanWifi()">Scan</button>
+      <span class="tip-wrap" id="wifi-cont-wrap">
+        <button type="button" id="wifi-continuous" disabled onclick="toggleWifiContinuous()">Continuous</button>
+        <span class="tip" id="wifi-cont-tip">Start the Kismet server on the Kismet tab first. Continuous scan uses Kismet to hop channels and keep this list updated.</span>
+      </span>
       <button type="button" onclick="clearDevices('wifi')">Clear</button>
       <span id="wifi-status" class="muted"></span>
     </div>

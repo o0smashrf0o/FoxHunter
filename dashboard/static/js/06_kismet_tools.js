@@ -17,7 +17,11 @@ async function kismetStart() {
   try {
     var r = await fetch('/api/kismet_start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     var j = await r.json();
-    if (el) el.textContent = j.msg || (j.ok ? 'Started' : 'Failed');
+    if (el) {
+      el.textContent = j.msg || (j.ok ? 'Started' : 'Failed');
+      el.style.color = j.ok ? 'var(--accent)' : 'var(--danger)';
+    }
+    if (typeof syncWifiContinuousBtn === 'function') syncWifiContinuousBtn();
     await kismetRefresh();
   } catch (e) {
     if (el) el.textContent = e.message;
@@ -25,8 +29,10 @@ async function kismetStart() {
 }
 
 async function kismetStop() {
+  if (typeof stopWifiContinuous === 'function') stopWifiContinuous();
   await fetch('/api/kismet_stop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   await kismetStatus();
+  if (typeof syncWifiContinuousBtn === 'function') syncWifiContinuousBtn();
 }
 
 async function kismetRefresh() {

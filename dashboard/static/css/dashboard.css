@@ -131,6 +131,26 @@ header.app-header::after {
   color: var(--text);
 }
 .win-btn.win-close { color: var(--danger); border-color: #6a2020; }
+.tip-wrap { position: relative; display: inline-block; }
+.tip-wrap .tip {
+  display: none;
+  position: absolute;
+  left: 0; top: calc(100% + 6px);
+  z-index: 30;
+  width: min(280px, 70vw);
+  padding: 0.55rem 0.65rem;
+  background: #100c1c;
+  border: 1px solid var(--accent2);
+  color: var(--text);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  border-radius: 8px;
+  box-shadow: var(--glow-purple);
+}
+.tip-wrap.show-tip:hover .tip,
+.tip-wrap.show-tip:focus-within .tip { display: block; }
 .pill {
   border: 1px solid var(--border);
   background: rgba(16, 12, 28, 0.85);

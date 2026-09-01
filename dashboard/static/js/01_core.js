@@ -74,6 +74,7 @@ function showTab(name) {
     t.classList.toggle('active', t.getAttribute('data-tab') === name);
   });
   if (name === 'wifi' || name === 'bt' || name === 'hunt') loadLiveSources();
+  if (name === 'wifi' && typeof syncWifiContinuousBtn === 'function') syncWifiContinuousBtn();
   if (name === 'detect' && typeof loadDetectCapabilities === 'function') loadDetectCapabilities();
   if (name === 'findings' && typeof loadFindings === 'function') loadFindings();
   if (name === 'kismet' && typeof kismetStatus === 'function') kismetStatus();
@@ -104,6 +105,10 @@ document.addEventListener('DOMContentLoaded', function () {
   refreshStats();
   setInterval(refreshStats, 5000);
   setInterval(loadLiveSources, 3000);
+  if (typeof syncWifiContinuousBtn === 'function') {
+    syncWifiContinuousBtn();
+    setInterval(syncWifiContinuousBtn, 4000);
+  }
 });
 
 function _fillSourceSelect(sel, items, valueOf, labelOf) {

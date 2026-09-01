@@ -29,6 +29,63 @@ async function scanWifi() {
   }
 }
 
+var _wifiContTimer = null;
+
+async function syncWifiContinuousBtn() {
+  var btn = document.getElementById('wifi-continuous');
+  var wrap = document.getElementById('wifi-cont-wrap');
+  if (!btn) return;
+  var running = false;
+  try {
+    var r = await fetch('/api/kismet_status');
+    var j = await r.json();
+    running = !!j.running;
+  } catch (e) {}
+  if (_wifiContTimer && !running) stopWifiContinuous();
+  btn.disabled = !running && !_wifiContTimer;
+  if (wrap) wrap.classList.toggle('show-tip', btn.disabled);
+  if (running && _wifiContTimer) btn.classList.add('toggle-on');
+  else btn.classList.remove('toggle-on');
+}
+
+function stopWifiContinuous() {
+  if (_wifiContTimer) { clearInterval(_wifiContTimer); _wifiContTimer = null; }
+  var btn = document.getElementById('wifi-continuous');
+  if (btn) { btn.classList.remove('toggle-on'); btn.textContent = 'Continuous'; }
+  setHuntStatus('IDLE', 'idle');
+}
+
+async function toggleWifiContinuous() {
+  var btn = document.getElementById('wifi-continuous');
+  if (btn && btn.disabled) return;
+  if (_wifiContTimer) { stopWifiContinuous(); return; }
+  if (btn) { btn.textContent = 'Stop cont.'; btn.classList.add('toggle-on'); }
+  setHuntStatus('HUNTING', 'scan');
+  await wifiContinuousTick();
+  _wifiContTimer = setInterval(wifiContinuousTick, 4000);
+}
+
+async function wifiContinuousTick() {
+  var st = document.getElementById('wifi-status');
+  try {
+    var r = await fetch('/api/kismet_devices_live');
+    var j = await r.json();
+    if (!j.ok && !j.devices) {
+      stopWifiContinuous();
+      await syncWifiContinuousBtn();
+      return;
+    }
+    wifiDevices = (j.devices || []).filter(function (d) {
+      return d.type === 'wifi' || d.ssid || (d.mac && d.type !== 'bt');
+    });
+    renderWifiTable();
+    updateAcq('wifi', wifiDevices, 'kismet');
+    if (st) st.textContent = 'Kismet live · ' + wifiDevices.length + ' device(s)';
+  } catch (e) {
+    if (st) st.textContent = e.message;
+  }
+}
+
 function renderWifiTable() {
   var tb = document.querySelector('#wifi-table tbody');
   if (!tb) return;
