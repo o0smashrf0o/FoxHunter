@@ -97,9 +97,9 @@ VERSION="${VERSION} (Fox Hunter)"
 VERSION_CODENAME=${debian_code}
 ID=debian
 ID_LIKE=debian
-HOME_URL="https://github.com/o0smashrf0o/SmashDeck"
-SUPPORT_URL="https://github.com/o0smashrf0o/SmashDeck/issues"
-BUG_REPORT_URL="https://github.com/o0smashrf0o/SmashDeck/issues"
+HOME_URL="https://github.com/o0smashrf0o/FoxHunter"
+SUPPORT_URL="https://github.com/o0smashrf0o/FoxHunter/issues"
+BUG_REPORT_URL="https://github.com/o0smashrf0o/FoxHunter/issues"
 VARIANT="Fox Hunter"
 VARIANT_ID=foxhunter
 EOF
