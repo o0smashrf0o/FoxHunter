@@ -1,4 +1,4 @@
-# SmashDeck OS splash — contain (no stretch) on black
+# Fox Hunter OS splash — contain (no stretch) on black
 Window.SetBackgroundTopColor(0.00, 0.00, 0.00);
 Window.SetBackgroundBottomColor(0.00, 0.00, 0.00);
 img = Image("splash.png");

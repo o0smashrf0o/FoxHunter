@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>SmashDeck</title>
+  <title>Fox Hunter</title>
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,7 +16,7 @@
     <div class="brand-wrap">
       <img class="brand-mark" src="{{ url_for('static', filename='img/fox-mark.svg') }}" alt="" />
       <div>
-        <div class="brand">SMASHDECK</div>
+        <div class="brand">FOX HUNTER</div>
         <div class="brand-sub">WIRELESS HUNT · RF DECK</div>
       </div>
     </div>
@@ -24,11 +24,12 @@
     <div class="hud-pills">
       <div id="pill-hunt" class="pill hot">STATUS · IDLE</div>
       <div id="header-stats" class="pill">—</div>
-      <div class="win-btns">
-        <button type="button" class="win-btn" title="Desktop" onclick="hudWindow('minimize')">—</button>
-        <button type="button" class="win-btn" title="Fullscreen" onclick="hudWindow('maximize')">□</button>
-        <button type="button" class="win-btn win-close" title="Close HUD" onclick="hudWindow('close')">×</button>
-      </div>
+      <div id="pill-storage" class="pill">DATA · —</div>
+    </div>
+    <div class="win-btns">
+      <button type="button" class="win-btn" title="Desktop" onclick="hudWindow('minimize')">—</button>
+      <button type="button" class="win-btn" title="Fullscreen" onclick="hudWindow('maximize')">□</button>
+      <button type="button" class="win-btn win-close" title="Close HUD" onclick="hudWindow('close')">×</button>
     </div>
   </header>
 

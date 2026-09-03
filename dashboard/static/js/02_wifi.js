@@ -1,9 +1,52 @@
 /* Wi-Fi scan table */
 var wifiDevices = [];
+var _wifiReleased = {};
+
+async function ensureWifiCapture(iface) {
+  iface = (iface || '').trim();
+  if (!iface) return true;
+  if (_wifiReleased[iface]) return true;
+  var info = (window._wifiLink && window._wifiLink[iface]) || {};
+  if (!info.connected && !info.internet) return true;
+  var who = iface === 'wlan0' ? 'Onboard Wi-Fi (wlan0)' : iface;
+  var ssid = info.ssid ? (' "' + info.ssid + '"') : '';
+  var extra = info.internet ? ' This will disconnect the deck from the internet.' : '';
+  var ok = window.confirm(
+    who + ' is connected' + ssid + '.' + extra +
+    '\n\nUse it as a Fox Hunter source? The Pi will drop that AP.'
+  );
+  if (!ok) return false;
+  var st = document.getElementById('wifi-status');
+  if (st) st.textContent = 'Releasing ' + iface + '…';
+  try {
+    var r = await fetch('/api/wifi_release', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ iface: iface })
+    });
+    var j = await r.json();
+    if (!j.ok) {
+      alert(j.error || j.msg || ('Could not release ' + iface));
+      return false;
+    }
+    _wifiReleased[iface] = true;
+    if (window._wifiLink && window._wifiLink[iface]) {
+      window._wifiLink[iface].connected = false;
+      window._wifiLink[iface].internet = false;
+    }
+    return true;
+  } catch (e) {
+    alert(e.message);
+    return false;
+  }
+}
 
 async function scanWifi() {
   var st = document.getElementById('wifi-status');
   var src = (document.getElementById('wifi-source') || {}).value || '';
+  if (!(await ensureWifiCapture(src))) {
+    if (st) { st.textContent = 'Cancelled'; st.classList.remove('scanning'); }
+    return;
+  }
   if (st) { st.textContent = 'SCANNING…'; st.classList.add('scanning'); }
   setHuntStatus('SCANNING', 'scan');
   try {
@@ -59,6 +102,8 @@ async function toggleWifiContinuous() {
   var btn = document.getElementById('wifi-continuous');
   if (btn && btn.disabled) return;
   if (_wifiContTimer) { stopWifiContinuous(); return; }
+  var src = (document.getElementById('wifi-source') || {}).value || '';
+  if (!(await ensureWifiCapture(src))) return;
   if (btn) { btn.textContent = 'Stop cont.'; btn.classList.add('toggle-on'); }
   setHuntStatus('HUNTING', 'scan');
   await wifiContinuousTick();
@@ -68,7 +113,8 @@ async function toggleWifiContinuous() {
 async function wifiContinuousTick() {
   var st = document.getElementById('wifi-status');
   try {
-    var r = await fetch('/api/kismet_devices_live');
+    var src = (document.getElementById('wifi-source') || {}).value || '';
+    var r = await fetch('/api/kismet_devices_live?source=' + encodeURIComponent(src));
     var j = await r.json();
     if (!j.ok && !j.devices) {
       stopWifiContinuous();
@@ -79,8 +125,8 @@ async function wifiContinuousTick() {
       return d.type === 'wifi' || d.ssid || (d.mac && d.type !== 'bt');
     });
     renderWifiTable();
-    updateAcq('wifi', wifiDevices, 'kismet');
-    if (st) st.textContent = 'Kismet live · ' + wifiDevices.length + ' device(s)';
+    updateAcq('wifi', wifiDevices, j.iface || src || 'kismet');
+    if (st) st.textContent = 'Kismet live · ' + (j.iface || src || '?') + ' · ' + wifiDevices.length + ' device(s)';
   } catch (e) {
     if (st) st.textContent = e.message;
   }

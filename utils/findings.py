@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SQLite findings store for SmashDeck."""
+"""SQLite findings store for Fox Hunter."""
 from __future__ import annotations
 
 import json
@@ -94,7 +94,7 @@ def export_findings(fmt: str = "md", limit: int = 50) -> str:
     items = list_findings(limit)
     if fmt == "json":
         return json.dumps(items, indent=2, default=str)
-    lines = ["# SmashDeck Findings", ""]
+    lines = ["# Fox Hunter Findings", ""]
     for f in items:
         lines.append(f"## #{f['id']} {f.get('tool')} — {f.get('severity')}")
         lines.append(f"- target: {f.get('target')}")

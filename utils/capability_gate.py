@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hardware capability checks for SmashDeck tools."""
+"""Hardware capability checks for Fox Hunter tools."""
 from __future__ import annotations
 
 from pathlib import Path

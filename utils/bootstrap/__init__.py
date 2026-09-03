@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SmashDeck bootstrap — first-run apt/venv/udev (dev path)."""
+"""Fox Hunter bootstrap — first-run apt/venv/udev (dev path)."""
 from __future__ import annotations
 
 import os
@@ -96,7 +96,7 @@ def bootstrap_if_needed(force: bool = False) -> None:
         setup_venv()
         reexec_into_venv()
         return
-    _log("=== SmashDeck full bootstrap ===")
+    _log("=== Fox Hunter full bootstrap ===")
     try:
         install_system_packages()
     except Exception as e:

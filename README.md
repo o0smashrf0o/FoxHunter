@@ -1,4 +1,4 @@
-# SmashDeck
+# Fox Hunter
 
 Portable Raspberry Pi 4 RF / wireless survey & analysis deck.
 
@@ -15,14 +15,14 @@ GUI install — double-click, enter admin password once, go.
 
 ## Quick start (Pi)
 
-1. Copy this folder (or a `dist/smashdeck-install-*` release) to the Pi.
-2. Double-click **SmashDeck.desktop** (or run `./smashdeck-media-start`).
-3. Follow the installer (admin password once).
+1. Copy this folder (or a `dist/foxhunter-install-*` release) to the Pi.
+2. Double-click **FoxHunter.desktop** (or run `./foxhunter-media-start`).
+3. Follow the installer (admin password once). Kismet is installed here.
 4. Optional: set a HUD password when asked, or skip.
-5. Launch **SmashDeck** from the app menu afterward.
+5. Launch **Fox Hunter** from the app menu afterward.
 
-Install path: `/opt/smashdeck`  
-User data: `~/.local/share/smashdeck/`
+Install path: `/opt/foxhunter`  
+User data: `~/.local/share/foxhunter/`
 
 ## Build install media (dev machine)
 
@@ -34,7 +34,7 @@ User data: `~/.local/share/smashdeck/`
 ## Dev launch (on Pi, in-tree)
 
 ```bash
-./smashdeck-launch --dev
+./foxhunter-launch --dev
 # dashboard only:
 cd dashboard && python3 app.py   # http://localhost:8080
 ```
@@ -57,4 +57,4 @@ RF transmit is regulated — stay legal.
 ## Credits
 
 Blue Sonar: [ZeroChaos-/blue_sonar](https://github.com/ZeroChaos-/blue_sonar) (BSD-2-Clause).
-Inspired by field cyberdeck designs; SmashDeck is a clean-room rewrite.
+Inspired by field cyberdeck designs; Fox Hunter is a clean-room rewrite.

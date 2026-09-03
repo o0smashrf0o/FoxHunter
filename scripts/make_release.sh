@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build clean SmashDeck install media.
+# Build clean Fox Hunter install media.
 # Usage: ./scripts/make_release.sh [--zip]
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -15,7 +15,7 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown: $1" >&2; exit 2 ;;
   esac
 done
-NAME="smashdeck-install-${VERSION}"
+NAME="foxhunter-install-${VERSION}"
 DEST="${OUT_BASE}/${NAME}"
 mkdir -p "$OUT_BASE"
 rm -rf "$DEST"
@@ -50,7 +50,7 @@ dest = Path("$DEST")
 sys.path.insert(0, str(dest))
 from packaging.heal_media_desktop import heal_media_launchers
 print(heal_media_launchers(dest))
-for name in ("smashdeck-gui", "smashdeck-launch", "smashdeck-media-start", "SmashDeck.desktop"):
+for name in ("foxhunter-gui", "foxhunter-launch", "foxhunter-media-start", "FoxHunter.desktop"):
     p = dest / name
     if p.is_file():
         p.chmod(p.stat().st_mode | 0o755)
@@ -60,20 +60,20 @@ if bs.is_file():
 PY
 
 cat > "$DEST/INSTALL.txt" <<TXT
-SmashDeck ${VERSION} — install media
+Fox Hunter ${VERSION} — install media
 ====================================
 1. Copy this folder to a Raspberry Pi 4 (64-bit Pi OS).
-2. Double-click SmashDeck.desktop (Allow Launching if asked).
-   Or: ./smashdeck-media-start
+2. Double-click Fox Hunter.desktop (Allow Launching if asked).
+   Or: ./foxhunter-media-start
 3. Enter admin password once; wait for install.
-4. Later: use SmashDeck from the application menu.
+4. Later: use Fox Hunter from the application menu.
 
-Install: /opt/smashdeck
-Data:    ~/.local/share/smashdeck/
+Install: /opt/foxhunter
+Data:    ~/.local/share/foxhunter/
 TXT
 cp "$DEST/INSTALL.txt" "$DEST/README-USB.txt"
 echo "$VERSION" > "$DEST/VERSION"
-touch "$DEST/.smashdeck-install-media"
+touch "$DEST/.foxhunter-install-media"
 
 echo "[make_release] size:"
 du -sh "$DEST" "$DEST/config" 2>/dev/null || true

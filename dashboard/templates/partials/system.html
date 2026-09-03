@@ -10,6 +10,23 @@
       <button type="button" onclick="clearHudPassword()">Remove HUD password</button>
       <span id="auth-status" class="muted"></span>
     </div>
+    <h2 style="margin-top:1rem">Scan storage</h2>
+    <p class="muted" id="stor-path">JSON + CSV under user data</p>
+    <div class="stor-bar" id="stor-bar"><span id="stor-fill"></span></div>
+    <p class="muted" id="stor-label">—</p>
+    <div class="row">
+      <button class="primary" type="button" onclick="loadStorage()">Refresh storage</button>
+      <button type="button" onclick="copyAllScans()">Copy all to USB</button>
+      <button class="danger" type="button" onclick="deleteAllScans()">Delete all scans</button>
+    </div>
+    <div class="table-wrap" style="max-height:28vh">
+      <table class="grid" id="stor-table">
+        <thead>
+          <tr><th>File</th><th>Kind</th><th>Size</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <div class="spectrum">
       <span class="cap">DECK HEALTH</span>
       <svg viewBox="0 0 400 72" preserveAspectRatio="none" aria-hidden="true">

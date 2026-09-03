@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lightweight PID-file process tracking for SmashDeck tools."""
+"""Lightweight PID-file process tracking for Fox Hunter tools."""
 from __future__ import annotations
 
 import glob

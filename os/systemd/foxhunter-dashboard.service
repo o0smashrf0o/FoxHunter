@@ -1,0 +1,19 @@
+[Unit]
+Description=Fox Hunter dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smash
+Group=smash
+WorkingDirectory=/opt/foxhunter/dashboard
+Environment=FOXHUNTER_PREFIX=/opt/foxhunter
+Environment=FOXHUNTER_DATA=/home/smash/.local/share/foxhunter
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/foxhunter/.venv/bin/python /opt/foxhunter/dashboard/app.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

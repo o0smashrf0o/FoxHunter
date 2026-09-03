@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Fullscreen WebKit kiosk for SmashDeck (Wayland/labwc + X11)."""
+"""Fullscreen WebKit kiosk for Fox Hunter (Wayland/labwc + X11)."""
 from __future__ import annotations
 
 import os
 import sys
 
 os.environ.setdefault("GTK_A11Y", "none")
+os.environ["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"
+os.environ["WEBKIT_DISABLE_DMABUF_RENDERER"] = "1"
+os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
 
 URL = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8080/"
 
@@ -23,10 +26,10 @@ def main() -> int:
         print(f"webkit kiosk unavailable: {e}", file=sys.stderr)
         return 2
 
-    GLib.set_prgname("smashdeck")
-    Gdk.set_program_class("smashdeck")
+    GLib.set_prgname("foxhunter")
+    Gdk.set_program_class("foxhunter")
 
-    win = Gtk.Window(title="SmashDeck")
+    win = Gtk.Window(title="Fox Hunter")
     win.set_decorated(False)
     win.set_skip_taskbar_hint(True)
     w, h = _screen_size()
@@ -39,7 +42,7 @@ def main() -> int:
     settings.set_enable_javascript(True)
     settings.set_enable_developer_extras(False)
     try:
-        settings.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.ALWAYS)
+        settings.set_hardware_acceleration_policy(WebKit2.HardwareAccelerationPolicy.NEVER)
     except Exception:
         pass
 
@@ -50,8 +53,10 @@ def main() -> int:
     win.show_all()
     win.maximize()
     win.fullscreen()
-    GLib.timeout_add(150, lambda: _force_full(win) or False)
-    GLib.timeout_add(800, lambda: _force_full(win) or False)
+    GLib.timeout_add(150, lambda: _force_full(win, view) or False)
+    GLib.timeout_add(400, lambda: _nudge_paint(win, view) or False)
+    GLib.timeout_add(900, lambda: _nudge_paint(win, view) or False)
+    view.connect("load-changed", lambda _v, ev: _on_load(win, view, ev))
     Gtk.main()
     return 0
 
@@ -67,14 +72,48 @@ def _screen_size():
         return 800, 480
 
 
-def _force_full(win) -> bool:
+def _force_full(win, view=None) -> bool:
     try:
         win.maximize()
         win.fullscreen()
         win.present()
+        if view is not None:
+            view.queue_draw()
+        win.queue_draw()
     except Exception:
         pass
     return False
+
+
+def _nudge_paint(win, view) -> bool:
+    try:
+        view.hide()
+        win.queue_draw()
+
+        def _show():
+            try:
+                view.show()
+                win.fullscreen()
+                view.queue_draw()
+                win.queue_draw()
+            except Exception:
+                pass
+            return False
+
+        from gi.repository import GLib
+        GLib.timeout_add(40, _show)
+    except Exception:
+        pass
+    return False
+
+
+def _on_load(win, view, ev) -> None:
+    try:
+        from gi.repository import WebKit2
+        if ev == WebKit2.LoadEvent.FINISHED:
+            _nudge_paint(win, view)
+    except Exception:
+        pass
 
 
 def _on_key(win, event):

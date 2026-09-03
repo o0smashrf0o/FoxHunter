@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SmashDeck Flask dashboard — http://0.0.0.0:8080"""
+"""Fox Hunter Flask dashboard — http://0.0.0.0:8080"""
 from __future__ import annotations
 
 import os
@@ -36,7 +36,10 @@ _OPEN = ("/login", "/static/")
 
 @app.before_request
 def _hud_auth():
-    from utils.auth import auth_enabled
+    try:
+        from utils.auth import auth_enabled
+    except Exception:
+        return None
     if not auth_enabled():
         return None
     path = request.path or "/"
@@ -78,9 +81,30 @@ app.register_blueprint(kismet_bp)
 app.register_blueprint(findings_bp)
 app.register_blueprint(hunt_bp)
 app.register_blueprint(heatmap_bp)
+try:
+    from routes.storage import storage_bp
+    app.register_blueprint(storage_bp)
+except Exception:
+    pass
+
+
+@app.errorhandler(Exception)
+def _err(e):
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException):
+        return e
+    import traceback
+    tb = traceback.format_exc()
+    try:
+        from utils.paths import LOGS_DASHBOARD, ensure_data_dirs
+        ensure_data_dirs()
+        (LOGS_DASHBOARD / "error.log").write_text(tb)
+    except Exception:
+        pass
+    return "<pre style='color:#b8ff2a;background:#07060f;padding:1rem;white-space:pre-wrap'>" + tb + "</pre>", 500
 
 
 if __name__ == "__main__":
     from utils.paths import ensure_data_dirs
     ensure_data_dirs()
-    app.run(host="0.0.0.0", port=int(os.environ.get("SMASHDECK_PORT", "8080")), debug=False)
+    app.run(host="0.0.0.0", port=int(os.environ.get("FOXHUNTER_PORT", "8080")), debug=False)

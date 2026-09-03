@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Root install helper for SmashDeck.
-Copies media → /opt/smashdeck, apt packages, venv, sudoers, udev, desktop entries.
+Root install helper for Fox Hunter.
+Copies media → /opt/foxhunter, apt packages, venv, sudoers, udev, desktop entries.
 """
 from __future__ import annotations
 
@@ -15,9 +15,9 @@ from pathlib import Path
 from typing import List, Optional
 
 HERE = Path(__file__).resolve().parent
-INSTALL_PREFIX = Path("/opt/smashdeck")
-STATE_DIR = Path("/var/lib/smashdeck")
-SUDOERS_DST = Path("/etc/sudoers.d/smashdeck")
+INSTALL_PREFIX = Path("/opt/foxhunter")
+STATE_DIR = Path("/var/lib/foxhunter")
+SUDOERS_DST = Path("/etc/sudoers.d/foxhunter")
 
 EXCLUDE_NAMES = {
     ".git", ".venv", "__pycache__", ".bootstrap_complete",
@@ -36,6 +36,7 @@ APT_PKGS = [
     "soapysdr-tools",
     "firmware-realtek", "firmware-mediatek",
     "zenity", "policykit-1",
+    "ca-certificates", "gnupg",
     "python3-gi", "gir1.2-gtk-3.0", "gir1.2-webkit2-4.1",
     "epiphany-browser",
 ]
@@ -99,13 +100,13 @@ def setup_venv(prefix: Path) -> bool:
 
 
 def install_sudoers(source_root: Path) -> bool:
-    src = source_root / "packaging" / "sudoers.smashdeck"
+    src = source_root / "packaging" / "sudoers.foxhunter"
     if not src.is_file():
-        src = HERE / "sudoers.smashdeck"
+        src = HERE / "sudoers.foxhunter"
     if not src.is_file():
         log("sudoers missing")
         return False
-    tmp = Path("/tmp/smashdeck-sudoers")
+    tmp = Path("/tmp/foxhunter-sudoers")
     tmp.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
     os.chmod(tmp, 0o440)
     if run(["visudo", "-cf", str(tmp)]) != 0:
@@ -118,21 +119,22 @@ def install_sudoers(source_root: Path) -> bool:
 
 
 def install_udev(source_root: Path) -> None:
-    src = source_root / "config" / "99-smashdeck.rules"
+    src = source_root / "config" / "99-foxhunter.rules"
     if not src.is_file():
         return
-    dst = Path("/etc/udev/rules.d/99-smashdeck.rules")
+    dst = Path("/etc/udev/rules.d/99-foxhunter.rules")
     shutil.copy2(src, dst)
     run(["udevadm", "control", "--reload-rules"])
     run(["udevadm", "trigger"])
 
 
 def ensure_group_and_user(username: str) -> None:
-    run(["groupadd", "-f", "smashdeck_ops"])
+    run(["groupadd", "-f", "foxhunter_ops"])
     run(["groupadd", "-f", "plugdev"])
     run(["groupadd", "-f", "dialout"])
+    run(["groupadd", "-f", "kismet"])
     if username and username != "root":
-        for g in ("smashdeck_ops", "plugdev", "dialout", "netdev"):
+        for g in ("foxhunter_ops", "plugdev", "dialout", "netdev", "kismet"):
             run(["usermod", "-aG", g, username])
 
 
@@ -143,25 +145,25 @@ def install_desktop_entries(prefix: Path, desktop_user: str) -> None:
     content = f"""[Desktop Entry]
 Version=1.0
 Type=Application
-Name=SmashDeck
+Name=Fox Hunter
 GenericName=RF & Wireless Analysis
 Comment=WiFi, Bluetooth, SDR survey toolkit
-Exec={prefix}/smashdeck-gui --mode kiosk
-TryExec={prefix}/smashdeck-gui
+Exec={prefix}/foxhunter-gui --mode kiosk
+TryExec={prefix}/foxhunter-gui
 Icon={icon}
 Terminal=false
 Categories=Network;HamRadio;Security;Utility;
 StartupNotify=true
 """
-    kiosk = content.replace("Name=SmashDeck", "Name=SmashDeck Kiosk").replace(
+    kiosk = content.replace("Name=Fox Hunter", "Name=Fox Hunter Kiosk").replace(
         "--mode app", "--mode kiosk"
     )
-    (apps / "smashdeck.desktop").write_text(content)
-    (apps / "smashdeck-kiosk.desktop").write_text(kiosk)
+    (apps / "foxhunter.desktop").write_text(content)
+    (apps / "foxhunter-kiosk.desktop").write_text(kiosk)
     if desktop_user and desktop_user != "root":
         home = Path("/home") / desktop_user / "Desktop"
         if home.is_dir():
-            dst = home / "SmashDeck.desktop"
+            dst = home / "FoxHunter.desktop"
             dst.write_text(content)
             os.chmod(dst, 0o755)
             try:
@@ -171,13 +173,42 @@ StartupNotify=true
 
 
 def chmod_scripts(prefix: Path) -> None:
-    for name in ("smashdeck-gui", "smashdeck-launch", "smashdeck-media-start", "smashdeck-kiosk"):
+    for name in ("foxhunter-gui", "foxhunter-launch", "foxhunter-media-start", "foxhunter-kiosk"):
         p = prefix / name
+        if p.is_file():
+            os.chmod(p, 0o755)
+    for rel in ("os/bin/install-kismet.sh", "os/bin/install-radio-stack.sh", "os/bin/start-kiosk", "os/bin/kismet-ctl", "os/bin/wifi-release"):
+        p = prefix / rel
         if p.is_file():
             os.chmod(p, 0o755)
     bs = prefix / "third_party" / "blue_sonar" / "blue_sonar"
     if bs.is_file():
         os.chmod(bs, 0o755)
+
+
+def install_kismet(source: Path, user: str) -> bool:
+    if shutil.which("kismet") or Path("/usr/bin/kismet").is_file():
+        log("kismet already present")
+        run(["groupadd", "-f", "kismet"])
+        if user and user != "root":
+            run(["usermod", "-aG", "kismet", user])
+        return True
+    script = source / "os" / "bin" / "install-kismet.sh"
+    env = os.environ.copy()
+    env["DEBIAN_FRONTEND"] = "noninteractive"
+    env["FOXHUNTER_USER"] = user or "smash"
+    if script.is_file():
+        os.chmod(script, 0o755)
+        log("Installing Kismet (required)")
+        rc = subprocess.call(["bash", str(script)], env=env, timeout=900)
+        ok = rc == 0 and (shutil.which("kismet") or Path("/usr/bin/kismet").is_file())
+        if not ok:
+            log("Kismet install failed")
+        return bool(ok)
+    env = os.environ.copy()
+    env["DEBIAN_FRONTEND"] = "noninteractive"
+    subprocess.call(["apt-get", "install", "-y", "kismet"], env=env, timeout=600)
+    return bool(shutil.which("kismet") or Path("/usr/bin/kismet").is_file())
 
 
 def apt_install(pkgs: List[str]) -> None:
@@ -201,8 +232,8 @@ def action_install(args: argparse.Namespace) -> int:
     ensure_root()
     source = Path(args.source).resolve()
     prefix = INSTALL_PREFIX
-    if os.environ.get("SMASHDECK_INSTALL_PREFIX"):
-        prefix = Path(os.environ["SMASHDECK_INSTALL_PREFIX"]).resolve()
+    if os.environ.get("FOXHUNTER_INSTALL_PREFIX"):
+        prefix = Path(os.environ["FOXHUNTER_INSTALL_PREFIX"]).resolve()
     if not (source / "dashboard" / "app.py").is_file():
         log(f"bad source: {source}")
         return 1
@@ -218,17 +249,18 @@ def action_install(args: argparse.Namespace) -> int:
     if not user:
         user = "pi"
 
-    log(f"Install SmashDeck from {source} → {prefix}")
+    log(f"Install Fox Hunter from {source} → {prefix}")
     apt_install(APT_PKGS)
-    # optional kismet
-    subprocess.call(["apt-get", "install", "-y", "--no-install-recommends", "kismet"], timeout=600)
+    if not install_kismet(source, user):
+        log("Kismet is required and was not installed")
+        return 1
 
     sync_tree(source, prefix)
     chmod_scripts(prefix)
     if not setup_venv(prefix):
         log("venv setup failed")
         return 1
-    install_sudoers(source if (source / "packaging" / "sudoers.smashdeck").is_file() else prefix)
+    install_sudoers(source if (source / "packaging" / "sudoers.foxhunter").is_file() else prefix)
     install_udev(prefix)
     ensure_group_and_user(user)
     install_desktop_entries(prefix, user)
@@ -248,10 +280,10 @@ def action_uninstall(args: argparse.Namespace) -> int:
     if prefix.exists():
         shutil.rmtree(prefix, ignore_errors=True)
     for p in (
-        Path("/usr/share/applications/smashdeck.desktop"),
-        Path("/usr/share/applications/smashdeck-kiosk.desktop"),
+        Path("/usr/share/applications/foxhunter.desktop"),
+        Path("/usr/share/applications/foxhunter-kiosk.desktop"),
         SUDOERS_DST,
-        Path("/etc/udev/rules.d/99-smashdeck.rules"),
+        Path("/etc/udev/rules.d/99-foxhunter.rules"),
     ):
         try:
             p.unlink()

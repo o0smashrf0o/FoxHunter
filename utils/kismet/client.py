@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Minimal Kismet REST client for SmashDeck."""
+"""Minimal Kismet REST client for Fox Hunter."""
 from __future__ import annotations
 
 import json
@@ -127,6 +127,25 @@ class KismetClient:
     def add_source(self, definition: str) -> Any:
         return self._post("/datasource/add_source.cmd", {"definition": definition})
 
+    def ensure_source(self, definition: str) -> None:
+        definition = (definition or "").strip()
+        if not definition:
+            return
+        iface = definition.split(":")[0]
+        try:
+            for s in self.list_sources() or []:
+                if not isinstance(s, dict):
+                    continue
+                cur = s.get("kismet.datasource.interface") or s.get("kismet.datasource.name") or ""
+                if cur == iface or cur == definition:
+                    return
+        except Exception:
+            pass
+        try:
+            self.add_source(definition)
+        except Exception:
+            pass
+
 
 def _log_tail(n: int = 40) -> str:
     log = KISMET_DIR / "kismet_launch.log"
@@ -180,29 +199,58 @@ def get_client() -> KismetClient:
     return _client
 
 
-def _wifi_source_def() -> str:
+def source_def(src: str = "") -> str:
+    src = (src or "").strip()
+    if src:
+        if ":" in src:
+            return src
+        return f"{src}:name={src}"
     try:
         from utils.device_detector import get_device_summary
         for d in get_device_summary().get("wifi") or []:
             iface = d.get("iface") or d.get("id") or ""
             if iface and iface != "wlan0":
-                return f"{iface}:name=SmashDeck"
+                return f"{iface}:name={iface}"
     except Exception:
         pass
     return ""
 
 
+def stop_kismet() -> Tuple[bool, str]:
+    ctl = Path("/opt/foxhunter/os/bin/kismet-ctl")
+    if not ctl.is_file():
+        ctl = Path(__file__).resolve().parents[2] / "os" / "bin" / "kismet-ctl"
+    cmds = []
+    if ctl.is_file():
+        cmds.append(["sudo", "-n", str(ctl), "stop"])
+    cmds.extend([
+        ["sudo", "-n", "/usr/bin/pkill", "-x", "kismet"],
+        ["sudo", "-n", "pkill", "-x", "kismet"],
+        ["pkill", "-x", "kismet"],
+    ])
+    notes = []
+    for cmd in cmds:
+        try:
+            p = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+            notes.append(f"{' '.join(cmd)} rc={p.returncode} {(p.stderr or p.stdout or '').strip()}")
+        except Exception as e:
+            notes.append(f"{' '.join(cmd)} {e}")
+    c = get_client()
+    for _ in range(20):
+        if not c.is_port_open():
+            return True, "Kismet stopped"
+        time.sleep(0.25)
+    return False, "Kismet still running\n" + "\n".join(notes)
+
+
 def ensure_kismet(extra_source: str = "") -> Tuple[bool, str]:
     """Start kismet as a daemon and keep it running."""
     c = get_client()
-    src = extra_source or _wifi_source_def()
+    src = source_def(extra_source)
     if c.is_port_open():
         if src:
-            try:
-                c.add_source(src)
-            except Exception:
-                pass
-        return True, "Kismet already running"
+            c.ensure_source(src)
+        return True, "Kismet already running" + (f" source={src}" if src else "")
     ensure_data_dirs()
     log = KISMET_DIR / "kismet_launch.log"
     homedir = str(KISMET_DIR)
@@ -230,7 +278,7 @@ def ensure_kismet(extra_source: str = "") -> Tuple[bool, str]:
                 env={**os.environ, "HOME": homedir},
             )
         except FileNotFoundError:
-            last_err = "kismet not installed"
+            last_err = "kismet not installed — run: sudo /opt/foxhunter/os/bin/install-kismet.sh"
             continue
         except Exception as e:
             last_err = str(e)
@@ -239,10 +287,7 @@ def ensure_kismet(extra_source: str = "") -> Tuple[bool, str]:
             time.sleep(0.4)
             if c.is_port_open():
                 if src:
-                    try:
-                        c.add_source(src)
-                    except Exception:
-                        pass
-                return True, "Kismet started"
+                    c.ensure_source(src)
+                return True, "Kismet started" + (f" source={src}" if src else "")
         last_err = "Kismet start timeout — see data/kismet/kismet_launch.log"
     return False, last_err

@@ -1,12 +1,30 @@
 #!/usr/bin/env bash
 # Fullscreen HUD. Chromium --kiosk is reliable on Pi OS labwc (GTK windows stay tiny).
 set +e
-PREFIX="${SMASHDECK_PREFIX:-/opt/smashdeck}"
-URL="${SMASHDECK_URL:-http://127.0.0.1:8080/}"
+PREFIX="${FOXHUNTER_PREFIX:-${SMASHDECK_PREFIX:-}}"
+if [[ -z "$PREFIX" ]]; then
+  if [[ -d /opt/foxhunter ]]; then PREFIX=/opt/foxhunter
+  else PREFIX=/opt/smashdeck
+  fi
+fi
+URL="${FOXHUNTER_URL:-${SMASHDECK_URL:-http://127.0.0.1:8080/}}"
 export DISPLAY="${DISPLAY:-:0}"
 export GTK_A11Y=none
+export LIBGL_ALWAYS_SOFTWARE=1
+export WEBKIT_DISABLE_COMPOSITING_MODE=1
+export WEBKIT_DISABLE_DMABUF_RENDERER=1
 
-# don't let the Pi panel sit on top
+restore_panel() {
+  killall wf-panel-pi lxpanel 2>/dev/null
+  sleep 0.3
+  if command -v wf-panel-pi >/dev/null 2>&1; then
+    wf-panel-pi >/dev/null 2>&1 &
+  elif command -v lxpanel >/dev/null 2>&1; then
+    lxpanel --profile LXDE-pi >/dev/null 2>&1 &
+  fi
+}
+
+# don't let the Pi panel sit on top of the HUD
 killall wf-panel-pi 2>/dev/null
 killall lxpanel 2>/dev/null
 
@@ -28,11 +46,18 @@ H=${H:-480}
 
 for c in chromium-browser chromium google-chrome; do
   if command -v "$c" >/dev/null 2>&1; then
-    exec "$c" \
-      --start-fullscreen \
+    "$c" \
+      --kiosk --start-fullscreen \
       --window-position=0,0 \
       --window-size="${W},${H}" \
-      --disable-gpu --disable-gpu-compositing --in-process-gpu \
+      --ozone-platform=x11 \
+      --disable-gpu --disable-gpu-compositing \
+      --use-gl=disabled \
+      --disable-accelerated-2d-canvas \
+      --disable-accelerated-video-decode \
+      --disable-features=VizDisplayCompositor,UseSkiaRenderer,GpuRasterization,CanvasOopRasterization,TranslateUI \
+      --num-raster-threads=1 \
+      --disable-partial-raster \
       --disable-smooth-scrolling \
       --noerrdialogs --disable-infobars \
       --disable-session-crashed-bubble \
@@ -40,11 +65,23 @@ for c in chromium-browser chromium google-chrome; do
       --disable-dev-shm-usage --no-first-run \
       --check-for-update-interval=31536000 \
       --renderer-process-limit=1 \
-      --app="$URL" "$URL"
+      --app="$URL" "$URL" &
+    cpid=$!
+    sleep 2
+    if command -v xdotool >/dev/null 2>&1; then
+      xdotool search --sync --onlyvisible --class chromium windowactivate --sync 2>/dev/null
+      xdotool click --repeat 2 1 2>/dev/null
+    fi
+    wait "$cpid"
+    restore_panel
+    exit 0
   fi
 done
 
-if [[ -f "$PREFIX/smashdeck-kiosk" ]]; then
-  exec python3 "$PREFIX/smashdeck-kiosk" "$URL"
+if [[ -f "$PREFIX/foxhunter-kiosk" ]]; then
+  python3 "$PREFIX/foxhunter-kiosk" "$URL"
+  restore_panel
+  exit 0
 fi
-exec xdg-open "$URL"
+xdg-open "$URL"
+restore_panel

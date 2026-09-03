@@ -28,20 +28,6 @@ html, body {
 body {
   background: #07060f;
 }
-body.hud-ready {
-  background:
-    linear-gradient(180deg, rgba(7, 6, 15, 0.72) 0%, #07060f 55%),
-    url("../img/fox-hunter.jpg") top center / cover no-repeat,
-    #07060f;
-}
-body::after {
-  content: "";
-  pointer-events: none;
-  position: fixed; inset: 0; z-index: 0;
-  background:
-    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(180, 76, 255, 0.18), transparent 60%),
-    radial-gradient(ellipse 40% 30% at 90% 80%, rgba(184, 255, 42, 0.05), transparent 50%);
-}
 button, input, select, textarea { font: inherit; }
 button {
   min-height: var(--touch);
@@ -78,13 +64,11 @@ select, input[type="text"] {
 #app { display: flex; flex-direction: column; min-height: 100%; position: relative; z-index: 1; }
 
 header.app-header {
-  display: flex; align-items: center; gap: 0.85rem;
-  padding: 0.55rem 0.9rem 0.65rem;
+  display: flex; align-items: center; gap: 0.55rem;
+  padding: 0.4rem 7.2rem 0.45rem 0.7rem;
   border-bottom: 1px solid var(--border);
-  background:
-    linear-gradient(180deg, rgba(10, 6, 20, 0.55), rgba(7, 6, 15, 0.78));
+  background: #100c1c;
   position: sticky; top: 0; z-index: 20;
-  backdrop-filter: blur(2px);
 }
 header.app-header::after {
   content: "";
@@ -95,7 +79,6 @@ header.app-header::after {
 .brand-wrap { display: flex; align-items: center; gap: 0.55rem; }
 .brand-mark {
   width: 42px; height: 42px;
-  filter: drop-shadow(0 0 6px rgba(184, 255, 42, 0.55));
 }
 .brand {
   font-weight: 700;
@@ -112,17 +95,24 @@ header.app-header::after {
 }
 .hud-pills {
   margin-left: auto;
-  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  display: flex; flex-direction: row; flex-wrap: nowrap;
+  gap: 0.28rem;
   align-items: center;
 }
-.win-btns { display: flex; gap: 0.25rem; }
-.win-btn {
-  min-width: 44px; min-height: 44px; padding: 0;
-  font-size: 1.15rem; line-height: 1;
-  border-color: var(--border);
-  color: var(--text);
+.win-btns {
+  position: absolute; top: 0; right: 0;
+  display: flex; gap: 0;
+  z-index: 40;
 }
-.win-btn.win-close { color: var(--danger); border-color: #6a2020; }
+.win-btn {
+  min-width: 44px; min-height: 40px; padding: 0;
+  font-size: 1.15rem; line-height: 1;
+  border: none; background: transparent; box-shadow: none;
+  color: var(--text); border-radius: 0;
+  text-transform: none;
+}
+.win-btn:active { transform: none; }
+.win-btn.win-close { color: var(--danger); }
 .kismet-console {
   white-space: pre-wrap;
   background: #0a0712;
@@ -136,6 +126,13 @@ header.app-header::after {
   color: var(--accent);
   margin-top: 0.6rem;
 }
+.stor-bar {
+  height: 12px; border-radius: 8px; background: #1a1228;
+  border: 1px solid var(--border); overflow: hidden; margin: 0.4rem 0;
+}
+.stor-bar > span { display: block; height: 100%; width: 0; background: var(--accent); }
+.stor-bar.warn > span { background: var(--warn); }
+.stor-bar.hot > span { background: var(--danger); }
 .tip-wrap { position: relative; display: inline-block; }
 .tip-wrap .tip {
   display: none;
@@ -160,11 +157,12 @@ header.app-header::after {
   border: 1px solid var(--border);
   background: rgba(16, 12, 28, 0.85);
   color: var(--muted);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  padding: 0.28rem 0.5rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  padding: 0.18rem 0.35rem;
   border-radius: 4px;
   min-height: 0;
+  white-space: nowrap;
 }
 .pill.ok { color: var(--accent); border-color: #3d5a12; }
 .pill.warn { color: var(--warn); border-color: #6a4a10; }
@@ -345,9 +343,7 @@ table.grid th {
 .empty-state {
   text-align: center;
   padding: 2.2rem 1rem;
-  background:
-    linear-gradient(180deg, rgba(7,6,15,0.55), rgba(7,6,15,0.88)),
-    url("../img/fox-hunter.jpg") center 30% / cover no-repeat;
+  background: #100c1c;
   border: 1px dashed var(--border);
   border-radius: 8px;
   min-height: 180px;

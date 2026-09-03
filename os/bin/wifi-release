@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Take a Wi-Fi iface off NetworkManager / AP so Fox Hunter can scan it.
+#   sudo /opt/foxhunter/os/bin/wifi-release wlan0
+set +e
+iface="${1:-}"
+if [[ -z "$iface" || "$iface" == *'/'* || "$iface" == *' '* ]]; then
+  echo "usage: wifi-release <iface>" >&2
+  exit 2
+fi
+if command -v nmcli >/dev/null 2>&1; then
+  nmcli device disconnect "$iface" >/dev/null 2>&1
+  nmcli device set "$iface" managed no >/dev/null 2>&1
+fi
+iw dev "$iface" disconnect >/dev/null 2>&1
+if command -v wpa_cli >/dev/null 2>&1; then
+  wpa_cli -i "$iface" disconnect >/dev/null 2>&1
+fi
+ip link set "$iface" up >/dev/null 2>&1
+echo "released $iface"
+exit 0

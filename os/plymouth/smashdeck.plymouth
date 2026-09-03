@@ -1,8 +1,0 @@
-[Plymouth Theme]
-Name=SmashDeck
-Description=SmashDeck OS boot splash
-ModuleName=script
-
-[script]
-ImageDir=/usr/share/plymouth/themes/smashdeck
-ScriptFile=/usr/share/plymouth/themes/smashdeck/smashdeck.script

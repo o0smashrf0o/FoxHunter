@@ -1,9 +1,6 @@
 #!/bin/sh
-# SmashDeck OS — replaces /etc/xdg/labwc/autostart
+# Fox Hunter OS — replaces /etc/xdg/labwc/autostart
 export GTK_A11Y=none
 export GTK_THEME=Adwaita-dark
-# kiosk only (no Pi panel covering the HUD)
-/opt/smashdeck/os/bin/start-kiosk
-# Esc / quit kiosk → normal desktop (wallpaper later)
-pcmanfm --desktop --profile LXDE-pi &
-wf-panel-pi &
+# kiosk only — start-kiosk restores a single panel when the HUD exits
+/opt/foxhunter/os/bin/start-kiosk

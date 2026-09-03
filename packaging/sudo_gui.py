@@ -11,7 +11,7 @@ from typing import List
 def run_privileged(source_root: Path, args: List[str]) -> int:
     setup = source_root / "packaging" / "privileged_setup.py"
     if not setup.is_file():
-        setup = Path("/opt/smashdeck/packaging/privileged_setup.py")
+        setup = Path("/opt/foxhunter/packaging/privileged_setup.py")
     if not setup.is_file():
         print("privileged_setup.py missing", file=sys.stderr)
         return 1

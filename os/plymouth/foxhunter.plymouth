@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Fox Hunter
+Description=Fox Hunter OS boot splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/foxhunter
+ScriptFile=/usr/share/plymouth/themes/foxhunter/foxhunter.script

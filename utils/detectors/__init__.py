@@ -206,7 +206,7 @@ def run_spectrum_baseline(**_) -> Dict[str, Any]:
     import subprocess
     import tempfile
     from pathlib import Path
-    out = Path(tempfile.gettempdir()) / f"smashdeck_rtl_{int(time.time())}.csv"
+    out = Path(tempfile.gettempdir()) / f"foxhunter_rtl_{int(time.time())}.csv"
     try:
         p = subprocess.run(
             ["rtl_power", "-f", "2400M:2500M:1M", "-i", "1", "-e", "5s", str(out)],

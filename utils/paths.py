@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Central paths for SmashDeck runtime data and project root."""
+"""Central paths for Fox Hunter runtime data and project root."""
 from __future__ import annotations
 
 import os
@@ -10,13 +10,16 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _resolve_data_dir() -> Path:
-    env = (os.environ.get("SMASHDECK_DATA") or "").strip()
+    env = (os.environ.get("FOXHUNTER_DATA") or os.environ.get("SMASHDECK_DATA") or "").strip()
     if env:
         return Path(env).expanduser().resolve()
     try:
-        if PROJECT_ROOT.resolve() == Path("/opt/smashdeck").resolve():
+        root = PROJECT_ROOT.resolve()
+        if root in (Path("/opt/foxhunter").resolve(), Path("/opt/smashdeck").resolve()):
             xdg = os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))
-            return Path(xdg) / "smashdeck"
+            fh = Path(xdg) / "foxhunter"
+            old = Path(xdg) / "smashdeck"
+            return fh if fh.exists() or not old.exists() else old
     except Exception:
         pass
     return PROJECT_ROOT / "data"

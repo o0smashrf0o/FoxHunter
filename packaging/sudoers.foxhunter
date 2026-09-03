@@ -1,10 +1,10 @@
-# SmashDeck — scoped passwordless privileges for RF / wireless tools.
-# Installed to /etc/sudoers.d/smashdeck (mode 0440).
+# Fox Hunter — scoped passwordless privileges for RF / wireless tools.
+# Installed to /etc/sudoers.d/foxhunter (mode 0440).
 # Do NOT grant ALL=(ALL) NOPASSWD here.
 
-Defaults!SMASHDECK_CMDS !requiretty
+Defaults!FOXHUNTER_CMDS !requiretty
 
-Cmnd_Alias SMASHDECK_CMDS = \
+Cmnd_Alias FOXHUNTER_CMDS = \
     /usr/sbin/ip, /sbin/ip, /bin/ip, \
     /usr/sbin/iw, /sbin/iw, /usr/bin/iw, \
     /usr/sbin/iwconfig, /sbin/iwconfig, /usr/bin/iwconfig, \
@@ -15,11 +15,16 @@ Cmnd_Alias SMASHDECK_CMDS = \
     /usr/sbin/aircrack-ng, /usr/bin/aircrack-ng, \
     /usr/bin/kismet, /usr/bin/kismet_server, /usr/bin/kismet_cap_linux_wifi, \
     /usr/bin/kismet_cap_linux_bluetooth, \
+    /opt/foxhunter/os/bin/kismet-ctl, \
+    /opt/foxhunter/os/bin/wifi-release, \
+    /usr/bin/nmcli, /usr/sbin/nmcli, \
+    /usr/bin/pkill -x kismet, /bin/pkill -x kismet, \
+    /usr/bin/pkill -9 -x kismet, /bin/pkill -9 -x kismet, \
     /usr/bin/bluetoothctl, /bin/bluetoothctl, \
     /usr/bin/l2ping, /usr/bin/sdptool, /usr/bin/hcitool, \
     /usr/bin/hciconfig, /bin/hciconfig, \
     /usr/bin/timeout, /bin/timeout, \
-    /opt/smashdeck/third_party/blue_sonar/blue_sonar, \
+    /opt/foxhunter/third_party/blue_sonar/blue_sonar, \
     /usr/bin/pkill, /bin/pkill, /usr/bin/kill, /bin/kill
 
-%smashdeck_ops ALL=(root) NOPASSWD: SMASHDECK_CMDS
+%foxhunter_ops ALL=(root) NOPASSWD: FOXHUNTER_CMDS

@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=SmashDeck Kiosk
-Comment=Fullscreen SmashDeck HUD
-Exec=/opt/smashdeck/os/bin/start-kiosk
-X-GNOME-Autostart-enabled=true
-Hidden=false
-NoDisplay=false

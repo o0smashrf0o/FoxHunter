@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Broad RF stack — not limited to one vendor. Safe to re-run.
-# On the Pi:  sudo bash /opt/smashdeck/os/bin/install-radio-stack.sh
+# On the Pi:  sudo bash /opt/foxhunter/os/bin/install-radio-stack.sh
 set -euo pipefail
 if [[ ${EUID:-0} -ne 0 ]]; then
   echo "sudo $0" >&2
@@ -28,8 +28,15 @@ install_group hackrf libhackrf0 libhackrf-dev
 install_group soapysdr-tools soapysdr-module-rtlsdr soapysdr-module-hackrf
 install_group realtek-rtl88xxau-dkms || true
 
-if [[ -f /opt/smashdeck/config/99-smashdeck.rules ]]; then
-  cp /opt/smashdeck/config/99-smashdeck.rules /etc/udev/rules.d/99-smashdeck.rules
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [[ -f "$SCRIPT_DIR/install-kismet.sh" ]]; then
+  bash "$SCRIPT_DIR/install-kismet.sh"
+else
+  apt-get install -y kismet || true
+fi
+
+if [[ -f /opt/foxhunter/config/99-foxhunter.rules ]]; then
+  cp /opt/foxhunter/config/99-foxhunter.rules /etc/udev/rules.d/99-foxhunter.rules
   udevadm control --reload-rules || true
   udevadm trigger || true
 fi

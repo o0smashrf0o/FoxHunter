@@ -1,4 +1,4 @@
-/* SmashDeck core — tabs, helpers, HUD */
+/* Fox Hunter core — tabs, helpers, HUD */
 function escHtml(s) {
   if (s == null) return '';
   return String(s)
@@ -78,7 +78,10 @@ function showTab(name) {
   if (name === 'detect' && typeof loadDetectCapabilities === 'function') loadDetectCapabilities();
   if (name === 'findings' && typeof loadFindings === 'function') loadFindings();
   if (name === 'kismet' && typeof kismetStatus === 'function') kismetStatus();
-  if (name === 'system' && typeof loadChecks === 'function') loadChecks();
+  if (name === 'system') {
+    if (typeof loadChecks === 'function') loadChecks();
+    if (typeof loadStorage === 'function') loadStorage();
+  }
   if (name === 'hunt') {
     if (typeof loadSoiLists === 'function') loadSoiLists();
     if (typeof loadHuntSources === 'function') loadHuntSources();
@@ -101,9 +104,21 @@ document.addEventListener('DOMContentLoaded', function () {
   }).catch(function () {});
   if (typeof renderWifiTable === 'function') renderWifiTable();
   if (typeof renderBtTable === 'function') renderBtTable();
-  requestAnimationFrame(function () {
-    document.body.classList.add('hud-ready');
+  function forceHudPaint() {
+    var b = document.body;
+    if (!b) return;
+    b.style.transform = 'translate(0,0)';
+    void b.offsetHeight;
+    b.style.transform = '';
     window.dispatchEvent(new Event('resize'));
+  }
+  window.addEventListener('load', function () {
+    forceHudPaint();
+    setTimeout(forceHudPaint, 80);
+    setTimeout(forceHudPaint, 300);
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) forceHudPaint();
   });
   loadLiveSources();
   refreshStats();
@@ -124,7 +139,9 @@ function _fillSourceSelect(sel, items, valueOf, labelOf) {
   var same = sel.options.length === next.length;
   if (same) {
     for (var i = 0; i < next.length; i++) {
-      if (sel.options[i].value !== next[i].v) { same = false; break; }
+      if (sel.options[i].value !== next[i].v || sel.options[i].textContent !== next[i].l) {
+        same = false; break;
+      }
     }
   }
   if (same) return;
@@ -153,6 +170,16 @@ async function loadLiveSources() {
     var wifiItems = wifi.length ? wifi : Object.keys(named).map(function (k) {
       return { iface: named[k].iface || k, model: named[k].label || k, _key: k };
     });
+    window._wifiLink = window._wifiLink || {};
+    wifiItems.forEach(function (d) {
+      var iface = d.iface || d.id || d._key;
+      if (!iface) return;
+      window._wifiLink[iface] = {
+        connected: !!d.connected,
+        internet: !!d.internet,
+        ssid: d.ssid || ''
+      };
+    });
     _fillSourceSelect(
       document.getElementById('wifi-source'),
       wifiItems,
@@ -164,6 +191,9 @@ async function loadLiveSources() {
           if (named[k].iface === iface) label = named[k].label + ' (' + iface + ')';
         });
         if (d.model && d.model !== iface) label = d.model + ' (' + iface + ')';
+        if (d.connected || d.internet) {
+          label += d.ssid ? (' — AP: ' + d.ssid) : ' — in use for internet';
+        }
         return label;
       }
     );
@@ -224,6 +254,17 @@ async function refreshStats() {
     el.classList.remove('ok', 'warn');
     if (j.temp_c != null && j.temp_c >= 70) el.classList.add('warn');
     else el.classList.add('ok');
+    var stor = j.storage || {};
+    var sp = document.getElementById('pill-storage');
+    if (sp) {
+      sp.textContent = 'DATA ' + (stor.data_human || '—') + ' · FREE ' + (stor.disk_free_human || '—');
+      sp.classList.remove('ok', 'warn', 'hot');
+      sp.classList.add(stor.level === 'hot' ? 'hot' : (stor.level === 'warn' ? 'warn' : 'ok'));
+      if (stor.level === 'hot' && !window._storAlerted) {
+        window._storAlerted = true;
+        alert('Scan data is using most of the disk. Open System to export or delete scans.');
+      }
+    }
   } catch (e) {}
 }
 

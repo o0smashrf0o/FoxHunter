@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""USB / interface device detection for SmashDeck.
+"""USB / interface device detection for Fox Hunter.
 
 Known VID:PIDs are labeled; unknown wireless/BT/SDR sticks still show up
 as live wlan*/hci* interfaces so any dongle can be used.
@@ -124,6 +124,16 @@ def _wifi_ifaces() -> List[Dict[str, Any]]:
         if d.get("iface") == "wlan0":
             d["model"] = "Onboard Wi-Fi"
             d["caps"] = [c for c in d.get("caps", []) if c != "inject"]
+        try:
+            from utils.wifi_link import iface_status
+            st = iface_status(d.get("iface") or "")
+            d["connected"] = bool(st.get("connected"))
+            d["internet"] = bool(st.get("internet"))
+            d["ssid"] = st.get("ssid") or ""
+        except Exception:
+            d["connected"] = False
+            d["internet"] = False
+            d["ssid"] = ""
     return ifaces
 
 

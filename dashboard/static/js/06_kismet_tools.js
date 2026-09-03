@@ -62,11 +62,23 @@ function renderKismetConsole(j) {
   }
 }
 
+function kismetWifiSource() {
+  return ((document.getElementById('wifi-source') || {}).value || '').trim();
+}
+
 async function kismetStart() {
   var el = document.getElementById('kismet-status');
+  var src = kismetWifiSource();
+  if (typeof ensureWifiCapture === 'function' && !(await ensureWifiCapture(src))) {
+    if (el) el.textContent = 'Cancelled';
+    return;
+  }
   if (el) el.textContent = 'Starting…';
   try {
-    var r = await fetch('/api/kismet_start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    var r = await fetch('/api/kismet_start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source: kismetWifiSource() })
+    });
     var j = await r.json();
     if (el) {
       el.textContent = j.msg || (j.ok ? 'Started' : 'Failed');
@@ -80,14 +92,28 @@ async function kismetStart() {
 }
 
 async function kismetStop() {
+  var el = document.getElementById('kismet-status');
+  if (el) el.textContent = 'Stopping…';
   if (typeof stopWifiContinuous === 'function') stopWifiContinuous();
-  await fetch('/api/kismet_stop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  try {
+    var r = await fetch('/api/kismet_stop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    var j = await r.json();
+    if (el) {
+      el.textContent = j.msg || (j.ok ? 'Stopped' : 'Stop failed');
+      el.style.color = j.ok ? 'var(--muted)' : 'var(--danger)';
+    }
+  } catch (e) {
+    if (el) el.textContent = e.message;
+  }
   await kismetStatus();
   if (typeof syncWifiContinuousBtn === 'function') syncWifiContinuousBtn();
 }
 
 async function kismetRefresh() {
-  await kismetStatus();
+  var el = document.getElementById('kismet-status');
+  if (el) el.textContent = 'Restarting…';
+  await kismetStop();
+  await kismetStart();
 }
 
 async function launchTool() {
@@ -155,6 +181,75 @@ async function clearHudPassword() {
   var j = await r.json();
   var el = document.getElementById('auth-status');
   if (el) el.textContent = j.ok ? 'No password' : 'failed';
+}
+
+async function loadStorage() {
+  try {
+    var r = await fetch('/api/storage');
+    var j = await r.json();
+    window._storMounts = j.mounts || [];
+    var path = document.getElementById('stor-path');
+    var label = document.getElementById('stor-label');
+    var bar = document.getElementById('stor-bar');
+    var fill = document.getElementById('stor-fill');
+    if (path) path.textContent = j.data_dir || '';
+    if (label) {
+      label.textContent = (j.data_human || '0') + ' of scans/data  ·  disk ' +
+        (j.used_pct != null ? j.used_pct + '% used' : '') + '  ·  ' + (j.disk_free_human || '?') + ' free';
+    }
+    if (bar) {
+      bar.classList.remove('warn', 'hot');
+      if (j.level === 'warn' || j.level === 'hot') bar.classList.add(j.level);
+    }
+    if (fill) fill.style.width = Math.min(100, Number(j.data_pct) || 0) + '%';
+    var tb = document.querySelector('#stor-table tbody');
+    if (tb) {
+      var rows = '';
+      (j.scans || []).forEach(function (s) {
+        var p = encodeURIComponent(s.path);
+        rows += '<tr>'
+          + '<td>' + escHtml(s.name) + '</td>'
+          + '<td>' + escHtml(s.kind) + '</td>'
+          + '<td>' + escHtml(s.human) + '</td>'
+          + '<td><a href="/api/storage/export?path=' + p + '" style="color:var(--accent2)">JSON</a> '
+          + (s.csv ? '<a href="/api/storage/export?path=' + encodeURIComponent(s.csv) + '" style="color:var(--accent2)">CSV</a> ' : '')
+          + '<button type="button" onclick="deleteScanFile(\'' + p + '\')">Del</button></td>'
+          + '</tr>';
+      });
+      tb.innerHTML = rows || '<tr><td colspan="4" class="muted">No saved scans yet</td></tr>';
+    }
+  } catch (e) {}
+}
+
+async function deleteScanFile(encPath) {
+  if (!window.confirm('Delete this scan file?')) return;
+  await fetch('/api/storage/delete', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: decodeURIComponent(encPath) })
+  });
+  loadStorage();
+}
+
+async function deleteAllScans() {
+  if (!window.confirm('Delete ALL saved Wi-Fi and Bluetooth scans?')) return;
+  await fetch('/api/storage/delete', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ all: true })
+  });
+  loadStorage();
+}
+
+async function copyAllScans() {
+  var mounts = window._storMounts || [];
+  var dest = mounts[0] || window.prompt('Path to USB / external drive (e.g. /media/smash/USB)');
+  if (mounts.length > 1) dest = window.prompt('Copy scans to:\n' + mounts.join('\n'), mounts[0]);
+  if (!dest) return;
+  var r = await fetch('/api/storage/copy', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dest: dest })
+  });
+  var j = await r.json();
+  alert(j.ok ? ('Copied to ' + j.msg) : (j.error || j.msg || 'copy failed'));
 }
 
 async function loadChecks() {

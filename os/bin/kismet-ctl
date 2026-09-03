@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Fox Hunter Kismet start/stop helper (sudoers NOPASSWD).
+set +e
+cmd="${1:-}"
+shift || true
+KISMET="$(command -v kismet 2>/dev/null || echo /usr/bin/kismet)"
+
+kill_kismet() {
+  pkill -x kismet 2>/dev/null
+  pkill -x kismet_server 2>/dev/null
+  pkill -f '/usr/bin/kismet' 2>/dev/null
+  pkill -x kismet_cap_linux_wifi 2>/dev/null
+  pkill -x kismet_cap_linux_bluetooth 2>/dev/null
+  sleep 0.4
+  pkill -9 -x kismet 2>/dev/null
+  pkill -9 -f '/usr/bin/kismet' 2>/dev/null
+}
+
+case "$cmd" in
+  stop)
+    kill_kismet
+    exit 0
+    ;;
+  start)
+    exec "$KISMET" --no-ncurses --daemonize "$@"
+    ;;
+  *)
+    echo "usage: kismet-ctl start|stop [kismet args]" >&2
+    exit 2
+    ;;
+esac

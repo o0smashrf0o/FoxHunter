@@ -130,4 +130,9 @@ def system_stats() -> Dict[str, Any]:
             stats["temp_c"] = round(int(t.read_text().strip()) / 1000.0, 1)
     except Exception:
         pass
+    try:
+        from utils.scan_store import disk_status
+        stats["storage"] = disk_status()
+    except Exception:
+        pass
     return stats

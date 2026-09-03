@@ -27,12 +27,21 @@ def _sudo(cmd: List[str], timeout: float = 20.0) -> tuple[int, str]:
 
 
 def iw_scan_wifi(iface: str = "wlan1", limit: int = 100) -> List[Dict[str, Any]]:
-    """Active iw scan. Prefers sudo; falls back to plain iw."""
+    devices, _err = iw_scan_wifi_result(iface, limit)
+    return devices
+
+
+def iw_scan_wifi_result(iface: str = "wlan1", limit: int = 100) -> tuple[List[Dict[str, Any]], str]:
     rc, out = _sudo(["iw", "dev", iface, "scan"], timeout=25)
     if rc != 0 or not out:
-        rc, out = _run(["iw", "dev", iface, "scan"], timeout=25)
-    if not out or rc != 0:
-        return []
+        rc2, out2 = _run(["iw", "dev", iface, "scan"], timeout=25)
+        if rc2 == 0 and out2:
+            rc, out = rc2, out2
+    if rc != 0 or (out and re.search(r"fail|busy|denied|error|not found", out, re.I) and "BSS " not in out):
+        err = out or f"iw scan failed on {iface} (rc={rc})"
+        return [], err
+    if not out:
+        return [], f"iw scan returned nothing on {iface}"
     devices: List[Dict[str, Any]] = []
     cur: Dict[str, Any] = {}
     for line in out.splitlines():
@@ -84,7 +93,7 @@ def iw_scan_wifi(iface: str = "wlan1", limit: int = 100) -> List[Dict[str, Any]]
     if cur.get("mac"):
         devices.append(cur)
     devices.sort(key=lambda d: d.get("rssi_dbm") if d.get("rssi_dbm") is not None else -999, reverse=True)
-    return devices[:limit]
+    return devices[:limit], ""
 
 
 def hcitool_scan_bt(hci: str = "hci0", limit: int = 50) -> List[Dict[str, Any]]:

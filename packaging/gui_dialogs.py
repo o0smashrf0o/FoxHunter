@@ -1,4 +1,4 @@
-"""Zenity-backed dialogs for SmashDeck GUI install."""
+"""Zenity-backed dialogs for Fox Hunter GUI install."""
 from __future__ import annotations
 
 import subprocess
@@ -9,21 +9,21 @@ def _has_zenity() -> bool:
     return subprocess.call(["which", "zenity"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
 
-def info(text: str, title: str = "SmashDeck") -> None:
+def info(text: str, title: str = "Fox Hunter") -> None:
     if _has_zenity():
         subprocess.call(["zenity", "--info", f"--title={title}", f"--text={text}", "--width=420"])
     else:
         print(f"[{title}] {text}")
 
 
-def error(text: str, title: str = "SmashDeck") -> None:
+def error(text: str, title: str = "Fox Hunter") -> None:
     if _has_zenity():
         subprocess.call(["zenity", "--error", f"--title={title}", f"--text={text}", "--width=420"])
     else:
         print(f"ERROR [{title}] {text}")
 
 
-def confirm(text: str, title: str = "SmashDeck") -> bool:
+def confirm(text: str, title: str = "Fox Hunter") -> bool:
     if _has_zenity():
         return subprocess.call(
             ["zenity", "--question", f"--title={title}", f"--text={text}", "--width=420"]
@@ -35,7 +35,7 @@ def confirm(text: str, title: str = "SmashDeck") -> bool:
         return False
 
 
-def choose(text: str, options: Sequence[Tuple[str, str]], title: str = "SmashDeck") -> Optional[str]:
+def choose(text: str, options: Sequence[Tuple[str, str]], title: str = "Fox Hunter") -> Optional[str]:
     """options: list of (id, label). Returns id or None."""
     if _has_zenity():
         args = ["zenity", "--list", "--radiolist", f"--title={title}", f"--text={text}",
@@ -59,7 +59,7 @@ def choose(text: str, options: Sequence[Tuple[str, str]], title: str = "SmashDec
     return None
 
 
-def password(text: str = "Password", title: str = "SmashDeck") -> Optional[str]:
+def password(text: str = "Password", title: str = "Fox Hunter") -> Optional[str]:
     if _has_zenity():
         try:
             out = subprocess.check_output(

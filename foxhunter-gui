@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-SmashDeck GUI controller — install / update / daily launch.
-Double-click SmashDeck.desktop or run via smashdeck-media-start.
+Fox Hunter GUI controller — install / update / daily launch.
+Double-click Fox Hunter.desktop or run via foxhunter-media-start.
 """
 from __future__ import annotations
 
@@ -32,10 +32,10 @@ DASHBOARD_PORT = 8080
 
 def _env_for_app(prefix: Path) -> dict:
     env = os.environ.copy()
-    env["SMASHDECK_DATA"] = str(user_data_dir())
-    env["SMASHDECK_PREFIX"] = str(prefix)
-    if os.environ.get("SMASHDECK_DEV"):
-        env["SMASHDECK_DEV"] = "1"
+    env["FOXHUNTER_DATA"] = str(user_data_dir())
+    env["FOXHUNTER_PREFIX"] = str(prefix)
+    if os.environ.get("FOXHUNTER_DEV"):
+        env["FOXHUNTER_DEV"] = "1"
     return env
 
 
@@ -112,12 +112,21 @@ def _webkit_ok() -> bool:
 
 
 def launch_browser(mode: str = "app") -> None:
-    """Prefer WebKit kiosk (light on Pi). Chromium is last resort."""
+    """Kiosk mode uses start-kiosk so desktop icon matches boot HUD."""
     url = f"http://127.0.0.1:{DASHBOARD_PORT}/"
-    prefix = Path(os.environ.get("SMASHDECK_PREFIX") or INSTALL_PREFIX)
-    kiosk = prefix / "smashdeck-kiosk"
+    prefix = Path(os.environ.get("FOXHUNTER_PREFIX") or INSTALL_PREFIX)
+    if mode == "kiosk":
+        script = prefix / "os" / "bin" / "start-kiosk"
+        if script.is_file():
+            env = os.environ.copy()
+            env["GTK_A11Y"] = "none"
+            env["LIBGL_ALWAYS_SOFTWARE"] = "1"
+            env["WEBKIT_DISABLE_COMPOSITING_MODE"] = "1"
+            subprocess.Popen(["bash", str(script)], start_new_session=True, env=env)
+            return
+    kiosk = prefix / "foxhunter-kiosk"
     if not kiosk.is_file():
-        kiosk = MEDIA_ROOT / "smashdeck-kiosk"
+        kiosk = MEDIA_ROOT / "foxhunter-kiosk"
 
     # 1) GTK WebKit — typically ~80–150MB vs Chromium 400MB+
     if kiosk.is_file() and _webkit_ok():
@@ -158,7 +167,12 @@ def launch_browser(mode: str = "app") -> None:
         "--disable-background-networking",
         "--disable-sync",
         "--disable-translate",
-        "--disable-features=TranslateUI,MediaRouter,AudioServiceOutOfProcess",
+        "--ozone-platform=x11",
+        "--disable-gpu",
+        "--disable-gpu-compositing",
+        "--use-gl=disabled",
+        "--disable-accelerated-2d-canvas",
+        "--disable-features=TranslateUI,MediaRouter,AudioServiceOutOfProcess,VizDisplayCompositor,UseSkiaRenderer,GpuRasterization,CanvasOopRasterization",
         "--disable-session-crashed-bubble",
         "--disable-restore-session-state",
         "--disable-dev-shm-usage",
@@ -182,19 +196,19 @@ def launch_browser(mode: str = "app") -> None:
 
 
 def healthy_install(prefix: Path) -> bool:
-    return (prefix / "dashboard" / "app.py").is_file() and (prefix / "smashdeck-gui").is_file()
+    return (prefix / "dashboard" / "app.py").is_file() and (prefix / "foxhunter-gui").is_file()
 
 
 def do_launch(prefix: Path, mode: str = "app") -> int:
     if not healthy_install(prefix):
-        gui.error("SmashDeck install looks incomplete.\nRe-run setup from install media.")
+        gui.error("Fox Hunter install looks incomplete.\nRe-run setup from install media.")
         return 1
-    prog = gui.Progress("SmashDeck", "Starting…")
+    prog = gui.Progress("Fox Hunter", "Starting…")
     try:
         prog.update(40, "Starting dashboard…")
         if not start_dashboard(prefix):
             prog.close()
-            gui.error("Dashboard did not start. Check logs in ~/.local/share/smashdeck/logs/")
+            gui.error("Dashboard did not start. Check logs in ~/.local/share/foxhunter/logs/")
             return 1
         prog.update(80, "Opening interface…")
         launch_browser(mode)
@@ -207,13 +221,13 @@ def do_launch(prefix: Path, mode: str = "app") -> int:
 
 def _offer_hud_password() -> None:
     choice = gui.choose(
-        "Protect the SmashDeck HUD with a password?\n\n"
+        "Protect the Fox Hunter HUD with a password?\n\n"
         "You can skip this. Change it later on the System tab.",
         [
             ("set", "Set a password"),
             ("none", "No password"),
         ],
-        title="SmashDeck password",
+        title="Fox Hunter password",
     )
     if choice != "set":
         return
@@ -226,7 +240,7 @@ def _offer_hud_password() -> None:
         gui.error("Password too short. HUD will have no password.")
         return
     try:
-        os.environ.setdefault("SMASHDECK_DATA", str(user_data_dir()))
+        os.environ.setdefault("FOXHUNTER_DATA", str(user_data_dir()))
         from utils.auth import set_password
         set_password(p1)
     except Exception as e:
@@ -240,13 +254,13 @@ def do_install(media: Path, replace: bool = False) -> int:
         gui.error(f"Invalid paths:\n{e}")
         return 1
     if not gui.confirm(
-        "Install SmashDeck to /opt/smashdeck?\n\n"
+        "Install Fox Hunter to /opt/foxhunter?\n\n"
         "You will be asked for the administrator password once.\n"
         "Surveys and settings stay in your user folder.",
-        title="Install SmashDeck",
+        title="Install Fox Hunter",
     ):
         return 0
-    prog = gui.Progress("SmashDeck Install", "Administrator password…")
+    prog = gui.Progress("Fox Hunter Install", "Administrator password…")
     try:
         prog.update(10, "Copying files & installing packages…")
         args = ["install", "--source", str(media), "--profile", "full"]
@@ -263,8 +277,8 @@ def do_install(media: Path, replace: bool = False) -> int:
         prog.close()
     _offer_hud_password()
     gui.info(
-        "SmashDeck installed.\n\n"
-        "Use the SmashDeck menu icon next time.\n"
+        "Fox Hunter installed.\n\n"
+        "Use the Fox Hunter menu icon next time.\n"
         f"Data: {user_data_dir()}",
         title="Install complete",
     )
@@ -273,10 +287,10 @@ def do_install(media: Path, replace: bool = False) -> int:
 
 def do_upgrade(media: Path) -> int:
     if not gui.confirm(
-        f"Update SmashDeck?\nMedia: {read_version(media)}\n"
+        f"Update Fox Hunter?\nMedia: {read_version(media)}\n"
         f"Installed: {read_version(INSTALL_PREFIX) if is_installed() else 'none'}\n\n"
         "User data will be kept.",
-        title="Update SmashDeck",
+        title="Update Fox Hunter",
     ):
         return 0
     return do_install(media, replace=True)
@@ -290,7 +304,7 @@ def main() -> int:
     except Exception:
         pass
 
-    ap = argparse.ArgumentParser(description="SmashDeck")
+    ap = argparse.ArgumentParser(description="Fox Hunter")
     ap.add_argument("--mode", choices=["app", "kiosk"], default="kiosk")
     ap.add_argument("--dev", action="store_true", help="Run from media tree without /opt")
     ap.add_argument("--install", action="store_true")
@@ -300,21 +314,21 @@ def main() -> int:
     media = MEDIA_ROOT
     prefix = canonical_install_prefix()
 
-    if args.dev or os.environ.get("SMASHDECK_DEV"):
-        os.environ["SMASHDECK_DEV"] = "1"
+    if args.dev or os.environ.get("FOXHUNTER_DEV"):
+        os.environ["FOXHUNTER_DEV"] = "1"
         return do_launch(media, args.mode)
 
     if args.install or not is_installed():
         if is_installed() and not args.install:
             # installed but launched from media — offer update or launch
             choice = gui.choose(
-                "SmashDeck is already installed.",
+                "Fox Hunter is already installed.",
                 [
-                    ("launch", "Launch installed SmashDeck"),
+                    ("launch", "Launch installed Fox Hunter"),
                     ("update", "Update from this folder"),
                     ("cancel", "Cancel"),
                 ],
-                title="SmashDeck",
+                title="Fox Hunter",
             )
             if choice == "update":
                 return do_upgrade(media)
@@ -330,7 +344,7 @@ def main() -> int:
             from packaging.constants import version_cmp
             if version_cmp(read_version(media), read_version(prefix)) > 0:
                 if gui.confirm(
-                    f"Newer SmashDeck available ({read_version(media)} > {read_version(prefix)}).\nUpdate?",
+                    f"Newer Fox Hunter available ({read_version(media)} > {read_version(prefix)}).\nUpdate?",
                     title="Update available",
                 ):
                     return do_upgrade(media)

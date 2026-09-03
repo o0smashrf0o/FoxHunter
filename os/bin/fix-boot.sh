@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run ON the Pi: sudo /opt/smashdeck/os/bin/fix-boot.sh
+# Run ON the Pi: sudo /opt/foxhunter/os/bin/fix-boot.sh
 # Replaces Raspberry splash, sets wallpaper, fixes kiosk autostart.
 set -euo pipefail
 if [[ ${EUID:-0} -ne 0 ]]; then
@@ -7,13 +7,13 @@ if [[ ${EUID:-0} -ne 0 ]]; then
   exit 1
 fi
 
-PREFIX="${SMASHDECK_PREFIX:-/opt/smashdeck}"
+PREFIX="${FOXHUNTER_PREFIX:-/opt/foxhunter}"
 USER_NAME="${SUDO_USER:-smash}"
 HOME_DIR="$(getent passwd "$USER_NAME" | cut -d: -f6 || echo /home/smash)"
 ART="$PREFIX/dashboard/static/img/fox-hunter.jpg"
 SPLASH_SRC="$PREFIX/os/plymouth/splash.png"
 PIX=/usr/share/plymouth/themes/pix
-DEST=/usr/share/plymouth/themes/smashdeck
+DEST=/usr/share/plymouth/themes/foxhunter
 
 echo "[fix-boot] user=$USER_NAME prefix=$PREFIX"
 
@@ -47,9 +47,9 @@ if [[ -d "$PIX" ]]; then
   cp "$DEST/splash.png" "$PIX/splash.png"
   echo "[fix-boot] replaced Raspberry pix splash"
 fi
-if [[ -f "$PREFIX/os/plymouth/smashdeck.plymouth" ]]; then
-  cp "$PREFIX/os/plymouth/smashdeck.plymouth" "$DEST/"
-  cp "$PREFIX/os/plymouth/smashdeck.script" "$DEST/"
+if [[ -f "$PREFIX/os/plymouth/foxhunter.plymouth" ]]; then
+  cp "$PREFIX/os/plymouth/foxhunter.plymouth" "$DEST/"
+  cp "$PREFIX/os/plymouth/foxhunter.script" "$DEST/"
 fi
 mkdir -p /etc/plymouth
 cat > /etc/plymouth/plymouthd.conf <<'EOF'
@@ -102,14 +102,14 @@ if [[ -f "$KIOSK" ]]; then
   chmod +x "$KIOSK"
 fi
 mkdir -p /etc/xdg/autostart "$HOME_DIR/.config/autostart" "$HOME_DIR/.config/labwc"
-cat > /etc/xdg/autostart/smashdeck-kiosk.desktop <<EOF
+cat > /etc/xdg/autostart/foxhunter-kiosk.desktop <<EOF
 [Desktop Entry]
 Type=Application
-Name=SmashDeck Kiosk
+Name=Fox Hunter Kiosk
 Exec=/usr/bin/env GTK_A11Y=none $PREFIX/os/bin/start-kiosk
 X-GNOME-Autostart-enabled=true
 EOF
-cp /etc/xdg/autostart/smashdeck-kiosk.desktop "$HOME_DIR/.config/autostart/"
+cp /etc/xdg/autostart/foxhunter-kiosk.desktop "$HOME_DIR/.config/autostart/"
 # Pi OS labwc does not always honor xdg autostart — hook it
 touch "$HOME_DIR/.config/labwc/autostart"
 if ! grep -q start-kiosk "$HOME_DIR/.config/labwc/autostart" 2>/dev/null; then

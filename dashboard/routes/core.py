@@ -27,7 +27,7 @@ def api_checks():
 
 @core_bp.route("/status")
 def status():
-    return jsonify({"app": "SmashDeck", "ok": True})
+    return jsonify({"app": "Fox Hunter", "ok": True})
 
 
 @core_bp.route("/api/version")
@@ -37,7 +37,7 @@ def version():
         v = (PROJECT_ROOT / "VERSION").read_text().strip()
     except Exception:
         v = "0.0.0"
-    return jsonify({"version": v, "name": "SmashDeck"})
+    return jsonify({"version": v, "name": "Fox Hunter"})
 
 
 @core_bp.route("/api/auth", methods=["GET", "POST"])

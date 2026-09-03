@@ -1,1 +1,1 @@
-# SmashDeck utils package
+# Fox Hunter utils package

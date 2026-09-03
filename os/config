@@ -1,13 +1,13 @@
-# pi-gen config for SmashDeck OS (64-bit).
+# pi-gen config for Fox Hunter OS (64-bit).
 # Used by scripts/build-os-image.sh — do not run pi-gen without that wrapper.
 
-IMG_NAME="SmashDeckOS"
-PI_GEN_RELEASE="SmashDeck OS"
+IMG_NAME="FoxHunterOS"
+PI_GEN_RELEASE="Fox Hunter OS"
 RELEASE="trixie"
 ARCH="arm64"
 
 LOCALE_DEFAULT="en_US.UTF-8"
-TARGET_HOSTNAME="smashdeck"
+TARGET_HOSTNAME="foxhunter"
 KEYBOARD_KEYMAP="us"
 KEYBOARD_LAYOUT="English (US)"
 TIMEZONE_DEFAULT="America/New_York"
@@ -23,5 +23,5 @@ WPA_COUNTRY="US"
 DEPLOY_COMPRESSION="zip"
 COMPRESSION_LEVEL=6
 
-# Lite base + SmashDeck kiosk stage (skip PIXEL desktop).
-STAGE_LIST="stage0 stage1 stage2 ../stage-smashdeck"
+# Lite base + Fox Hunter kiosk stage (skip PIXEL desktop).
+STAGE_LIST="stage0 stage1 stage2 ../stage-foxhunter"

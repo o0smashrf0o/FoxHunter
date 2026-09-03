@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Blue Sonar for SmashDeck — continuous BT RSSI via l2ping + hcitool.
+Blue Sonar for Fox Hunter — continuous BT RSSI via l2ping + hcitool.
 
 Upstream: https://github.com/ZeroChaos-/blue_sonar (BSD-2-Clause)
 Kiosk-safe non-interactive service (upstream bash prompts on rfkill).
@@ -248,7 +248,7 @@ def stop() -> Dict[str, Any]:
 
 if __name__ == "__main__":
     import argparse
-    ap = argparse.ArgumentParser(description="SmashDeck Blue Sonar")
+    ap = argparse.ArgumentParser(description="Fox Hunter Blue Sonar")
     ap.add_argument("-t", "--target", required=True)
     ap.add_argument("-i", "--interface", default="hci0")
     ap.add_argument("-s", "--sleep", type=float, default=1.0)

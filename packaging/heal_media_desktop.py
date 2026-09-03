@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ensure portable SmashDeck.desktop + smashdeck-media-start are valid."""
+"""Ensure portable Fox Hunter.desktop + foxhunter-media-start are valid."""
 from __future__ import annotations
 
 import os
@@ -12,11 +12,11 @@ Type=Application
 Name={name}
 GenericName=RF & Wireless Analysis
 Comment={comment}
-Exec=./smashdeck-media-start
-TryExec=./smashdeck-media-start
+Exec=./foxhunter-media-start
+TryExec=./foxhunter-media-start
 Terminal=false
 Categories=Network;
-Keywords=SDR;Pentest;Kismet;WiFi;Bluetooth;RF;SmashDeck;
+Keywords=SDR;Pentest;Kismet;WiFi;Bluetooth;RF;Fox Hunter;
 StartupNotify=true
 Icon=network-wireless
 """
@@ -25,16 +25,16 @@ MEDIA_START = r"""#!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")")" && pwd)"
 cd "$ROOT" || exit 1
-export SMASHDECK_MEDIA_ROOT="$ROOT"
-PY="${SMASHDECK_PYTHON:-}"
+export FOXHUNTER_MEDIA_ROOT="$ROOT"
+PY="${FOXHUNTER_PYTHON:-}"
 if [[ -z "$PY" ]]; then
   if [[ -x "$ROOT/.venv/bin/python" ]]; then PY="$ROOT/.venv/bin/python"
   else PY="$(command -v python3 || true)"; fi
 fi
 if [[ -z "$PY" || ! -x "$PY" ]]; then
-  echo "SmashDeck: python3 not found." >&2; exit 1
+  echo "Fox Hunter: python3 not found." >&2; exit 1
 fi
-exec "$PY" "$ROOT/smashdeck-gui" "$@"
+exec "$PY" "$ROOT/foxhunter-gui" "$@"
 """
 
 
@@ -46,9 +46,9 @@ def _chmod_exec(path: Path) -> None:
 def heal_media_launchers(media_root: Path | None = None) -> dict:
     root = Path(media_root or Path(__file__).resolve().parent.parent).resolve()
     fixed: list[str] = []
-    start = root / "smashdeck-media-start"
+    start = root / "foxhunter-media-start"
     try:
-        need = (not start.is_file()) or ("smashdeck-gui" not in start.read_text(encoding="utf-8", errors="replace"))
+        need = (not start.is_file()) or ("foxhunter-gui" not in start.read_text(encoding="utf-8", errors="replace"))
         if need:
             start.write_text(MEDIA_START, encoding="utf-8")
             fixed.append(str(start))
@@ -57,8 +57,8 @@ def heal_media_launchers(media_root: Path | None = None) -> dict:
         return {"ok": False, "error": str(e)}
 
     for fname, name, comment in (
-        ("SmashDeck.desktop", "SmashDeck", "Double-click to install or open SmashDeck"),
-        ("smashdeck.desktop", "SmashDeck", "Install or open SmashDeck"),
+        ("FoxHunter.desktop", "Fox Hunter", "Double-click to install or open Fox Hunter"),
+        ("foxhunter.desktop", "Fox Hunter", "Install or open Fox Hunter"),
     ):
         path = root / fname
         content = PORTABLE_DESKTOP.format(name=name, comment=comment)
@@ -66,7 +66,7 @@ def heal_media_launchers(media_root: Path | None = None) -> dict:
             old = path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
             broken = (
                 not path.is_file()
-                or "./smashdeck-media-start" not in old
+                or "./foxhunter-media-start" not in old
                 or not old.lstrip().startswith("[")
             )
             if broken:
@@ -76,7 +76,7 @@ def heal_media_launchers(media_root: Path | None = None) -> dict:
         except Exception as e:
             return {"ok": False, "error": str(e), "fixed": fixed}
 
-    gui = root / "smashdeck-gui"
+    gui = root / "foxhunter-gui"
     if gui.is_file():
         try:
             _chmod_exec(gui)

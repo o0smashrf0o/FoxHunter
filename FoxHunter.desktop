@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Fox Hunter
+GenericName=RF & Wireless Analysis
+Comment=Double-click to install or open Fox Hunter (no terminal)
+Exec=./foxhunter-media-start
+TryExec=./foxhunter-media-start
+Terminal=false
+Categories=Network;
+Keywords=SDR;Pentest;Kismet;WiFi;Bluetooth;RF;Fox Hunter;
+StartupNotify=true
+Icon=network-wireless

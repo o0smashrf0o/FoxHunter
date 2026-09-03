@@ -10,4 +10,5 @@ rtl-sdr librtlsdr-dev hackrf libhackrf-dev
 soapysdr-tools soapysdr-module-rtlsdr soapysdr-module-hackrf
 firmware-realtek firmware-mediatek
 zenity policykit-1
+ca-certificates gnupg
 epiphany-browser

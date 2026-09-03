@@ -8,11 +8,11 @@
     <cornerRadius>0</cornerRadius>
   </theme>
   <windowRules>
-    <windowRule identifier="smashdeck" serverDecoration="no" skipTaskbar="yes" skipWindowSwitcher="yes">
+    <windowRule identifier="foxhunter" serverDecoration="no" skipTaskbar="yes" skipWindowSwitcher="yes">
       <action name="Maximize"/>
       <action name="ToggleFullscreen"/>
     </windowRule>
-    <windowRule identifier="SmashDeck" serverDecoration="no" skipTaskbar="yes">
+    <windowRule identifier="Fox Hunter" serverDecoration="no" skipTaskbar="yes">
       <action name="Maximize"/>
       <action name="ToggleFullscreen"/>
     </windowRule>

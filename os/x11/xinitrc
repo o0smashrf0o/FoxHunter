@@ -4,4 +4,4 @@ xset s off
 xset s noblank
 unclutter -idle 0.8 -root &
 openbox &
-/opt/smashdeck/os/bin/start-kiosk
+/opt/foxhunter/os/bin/start-kiosk

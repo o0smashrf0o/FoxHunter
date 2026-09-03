@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tool registry for SmashDeck."""
+"""Tool registry for Fox Hunter."""
 from __future__ import annotations
 
 import os
@@ -45,7 +45,7 @@ class BaseTool(ABC):
             env["PATH"] = f"{venv_bin}:{env.get('PATH', '')}"
         try:
             with open(log_path, "w") as lf:
-                lf.write(f"# SmashDeck {self.name}\n# CMD: {' '.join(cmd)}\n\n")
+                lf.write(f"# Fox Hunter {self.name}\n# CMD: {' '.join(cmd)}\n\n")
             proc = subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env, start_new_session=True
             )

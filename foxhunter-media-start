@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Portable media / USB launcher for SmashDeck.
+# Portable media / USB launcher for Fox Hunter.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")")" && pwd)"
 cd "$ROOT" || exit 1
-export SMASHDECK_MEDIA_ROOT="$ROOT"
-PY="${SMASHDECK_PYTHON:-}"
+export FOXHUNTER_MEDIA_ROOT="$ROOT"
+PY="${FOXHUNTER_PYTHON:-}"
 if [[ -z "$PY" ]]; then
   if [[ -x "$ROOT/.venv/bin/python" ]]; then
     PY="$ROOT/.venv/bin/python"
@@ -13,14 +13,14 @@ if [[ -z "$PY" ]]; then
   fi
 fi
 if [[ -z "$PY" || ! -x "$PY" ]]; then
-  echo "SmashDeck: python3 not found." >&2
+  echo "Fox Hunter: python3 not found." >&2
   if command -v zenity >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
-    zenity --error --title="SmashDeck" --text="python3 not found.\nInstall Python 3 and try again." --width=400 || true
+    zenity --error --title="Fox Hunter" --text="python3 not found.\nInstall Python 3 and try again." --width=400 || true
   fi
   exit 1
 fi
-if [[ ! -f "$ROOT/smashdeck-gui" ]]; then
-  echo "SmashDeck: smashdeck-gui missing in $ROOT" >&2
+if [[ ! -f "$ROOT/foxhunter-gui" ]]; then
+  echo "Fox Hunter: foxhunter-gui missing in $ROOT" >&2
   exit 1
 fi
-exec "$PY" "$ROOT/smashdeck-gui" "$@"
+exec "$PY" "$ROOT/foxhunter-gui" "$@"

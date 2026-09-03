@@ -18,7 +18,7 @@ def stop_browser() -> None:
     for pat in (
         "chromium.*127.0.0.1:8080",
         "chromium-browser.*127.0.0.1:8080",
-        "smashdeck-kiosk",
+        "foxhunter-kiosk",
         "epiphany.*127.0.0.1:8080",
     ):
         _run(["pkill", "-f", pat])
@@ -27,7 +27,7 @@ def stop_browser() -> None:
 
 
 def start_kiosk() -> None:
-    prefix = Path(os.environ.get("SMASHDECK_PREFIX") or "/opt/smashdeck")
+    prefix = Path(os.environ.get("FOXHUNTER_PREFIX") or "/opt/foxhunter")
     script = prefix / "os" / "bin" / "start-kiosk"
     if not script.is_file():
         script = Path(__file__).resolve().parent.parent / "os" / "bin" / "start-kiosk"

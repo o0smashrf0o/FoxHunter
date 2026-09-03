@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Theme Pi OS + hook labwc so SmashDeck is fullscreen on login.
+# Theme Pi OS + hook labwc so Fox Hunter is fullscreen on login.
 set +e
 if [[ ${EUID:-0} -ne 0 ]]; then echo "sudo $0" >&2; exit 1; fi
 
-PREFIX="${SMASHDECK_PREFIX:-/opt/smashdeck}"
+PREFIX="${FOXHUNTER_PREFIX:-/opt/foxhunter}"
 BOOT=/boot/firmware
 [[ -d "$BOOT" ]] || BOOT=/boot
 USER_NAME="${SUDO_USER:-smash}"
@@ -11,7 +11,7 @@ id "$USER_NAME" >/dev/null 2>&1 || USER_NAME=smash
 id "$USER_NAME" >/dev/null 2>&1 || USER_NAME=pi
 HOME_DIR="$(getent passwd "$USER_NAME" | cut -d: -f6)"
 SRC="$PREFIX/os/desktop"
-[[ -d "$SRC" ]] || SRC="$BOOT/smashdeck-desktop"
+[[ -d "$SRC" ]] || SRC="$BOOT/foxhunter-desktop"
 echo "[desktop] fullscreen kiosk + labwc session  user=$USER_NAME"
 
 # GTK
@@ -20,7 +20,10 @@ if [[ -f "$SRC/gtk-3.0/gtk.css" ]]; then
   cp "$SRC/gtk-3.0/gtk.css" "$HOME_DIR/.config/gtk-3.0/gtk.css"
   cp "$SRC/gtk-3.0/gtk.css" "$HOME_DIR/.config/gtk-4.0/gtk.css"
 fi
-[[ -f "$SRC/gtk-3.0/settings.ini" ]] && cp "$SRC/gtk-3.0/settings.ini" "$HOME_DIR/.config/gtk-3.0/settings.ini"
+if [[ -f "$SRC/gtk-3.0/settings.ini" ]]; then
+  cp "$SRC/gtk-3.0/settings.ini" "$HOME_DIR/.config/gtk-3.0/settings.ini"
+  cp "$SRC/gtk-3.0/settings.ini" "$HOME_DIR/.config/gtk-4.0/settings.ini"
+fi
 
 # labwc user
 mkdir -p "$HOME_DIR/.config/labwc"
