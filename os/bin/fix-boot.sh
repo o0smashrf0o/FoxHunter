@@ -101,21 +101,14 @@ if [[ -f "$KIOSK" ]]; then
   sed -i 's/--application-mode/--new-window/g' "$KIOSK"
   chmod +x "$KIOSK"
 fi
-mkdir -p /etc/xdg/autostart "$HOME_DIR/.config/autostart" "$HOME_DIR/.config/labwc"
-cat > /etc/xdg/autostart/foxhunter-kiosk.desktop <<EOF
-[Desktop Entry]
-Type=Application
-Name=Fox Hunter Kiosk
-Exec=/usr/bin/env GTK_A11Y=none $PREFIX/os/bin/start-kiosk
-X-GNOME-Autostart-enabled=true
-EOF
-cp /etc/xdg/autostart/foxhunter-kiosk.desktop "$HOME_DIR/.config/autostart/"
-# Pi OS labwc does not always honor xdg autostart — hook it
-touch "$HOME_DIR/.config/labwc/autostart"
-if ! grep -q start-kiosk "$HOME_DIR/.config/labwc/autostart" 2>/dev/null; then
-  echo "GTK_A11Y=none $PREFIX/os/bin/start-kiosk &" >> "$HOME_DIR/.config/labwc/autostart"
+rm -f /etc/xdg/autostart/foxhunter-kiosk.desktop /etc/xdg/autostart/smashdeck-kiosk.desktop \
+      "$HOME_DIR/.config/autostart/foxhunter-kiosk.desktop" "$HOME_DIR/.config/autostart/smashdeck-kiosk.desktop"
+if [[ -f "$HOME_DIR/.config/labwc/autostart" ]]; then
+  sed -i '/start-kiosk/d' "$HOME_DIR/.config/labwc/autostart"
 fi
-chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/.config/autostart" "$HOME_DIR/.config/labwc"
+if [[ -f /etc/xdg/labwc/autostart ]]; then
+  sed -i '/start-kiosk/d' /etc/xdg/labwc/autostart
+fi
 
 echo "[fix-boot] done. Reboot:"
 echo "  sudo reboot"

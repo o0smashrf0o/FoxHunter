@@ -128,11 +128,8 @@ install_services() {
     fi
   fi
 
-  mkdir -p /etc/xdg/autostart "$HOME_DIR/.config/autostart"
-  sed "s|/opt/foxhunter|$PREFIX|g" "$HERE/autostart/foxhunter-kiosk.desktop" \
-    > /etc/xdg/autostart/foxhunter-kiosk.desktop
-  cp /etc/xdg/autostart/foxhunter-kiosk.desktop "$HOME_DIR/.config/autostart/"
-  chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/.config/autostart"
+  rm -f /etc/xdg/autostart/foxhunter-kiosk.desktop /etc/xdg/autostart/smashdeck-kiosk.desktop \
+        "$HOME_DIR/.config/autostart/foxhunter-kiosk.desktop" "$HOME_DIR/.config/autostart/smashdeck-kiosk.desktop"
 
   mkdir -p /etc/systemd/system/getty@tty1.service.d
   cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<EOF
@@ -169,10 +166,8 @@ EOF
   fi
 
   mkdir -p "$HOME_DIR/.config/labwc"
-  if [[ -f "$HOME_DIR/.config/labwc/autostart" ]] && grep -q start-kiosk "$HOME_DIR/.config/labwc/autostart"; then
-    :
-  else
-    echo "GTK_A11Y=none $PREFIX/os/bin/start-kiosk &" >> "$HOME_DIR/.config/labwc/autostart"
+  if [[ -f "$HOME_DIR/.config/labwc/autostart" ]]; then
+    sed -i '/start-kiosk/d' "$HOME_DIR/.config/labwc/autostart"
   fi
   chown -R "$USER_NAME:$USER_NAME" "$HOME_DIR/.config/labwc"
 }

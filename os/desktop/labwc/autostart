@@ -1,4 +1,2 @@
 export GTK_A11Y=none
 export GTK_THEME=Adwaita-dark
-sleep 2
-/opt/foxhunter/os/bin/start-kiosk &

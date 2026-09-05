@@ -12,7 +12,7 @@ id "$USER_NAME" >/dev/null 2>&1 || USER_NAME=pi
 HOME_DIR="$(getent passwd "$USER_NAME" | cut -d: -f6)"
 SRC="$PREFIX/os/desktop"
 [[ -d "$SRC" ]] || SRC="$BOOT/foxhunter-desktop"
-echo "[desktop] fullscreen kiosk + labwc session  user=$USER_NAME"
+echo "[desktop] theme  user=$USER_NAME"
 
 # GTK
 mkdir -p "$HOME_DIR/.config/gtk-3.0" "$HOME_DIR/.config/gtk-4.0"
@@ -31,17 +31,17 @@ for f in rc.xml themerc-override environment; do
   [[ -f "$SRC/labwc/$f" ]] && cp "$SRC/labwc/$f" "$HOME_DIR/.config/labwc/$f"
 done
 
-# REPLACE system labwc autostart (user file alone cannot stop the Pi panel/wallpaper)
+if [[ -f /etc/xdg/labwc/autostart.raspberry.bak ]]; then
+  cp -a /etc/xdg/labwc/autostart.raspberry.bak /etc/xdg/labwc/autostart
+fi
 if [[ -f /etc/xdg/labwc/autostart ]]; then
-  cp -a /etc/xdg/labwc/autostart /etc/xdg/labwc/autostart.raspberry.bak 2>/dev/null
+  sed -i '/start-kiosk/d' /etc/xdg/labwc/autostart
 fi
-mkdir -p /etc/xdg/labwc
-if [[ -f "$PREFIX/os/xdg/labwc-autostart" ]]; then
-  cp "$PREFIX/os/xdg/labwc-autostart" /etc/xdg/labwc/autostart
-elif [[ -f "$BOOT/labwc-autostart" ]]; then
-  cp "$BOOT/labwc-autostart" /etc/xdg/labwc/autostart
+if [[ -f "$HOME_DIR/.config/labwc/autostart" ]]; then
+  sed -i '/start-kiosk/d' "$HOME_DIR/.config/labwc/autostart"
 fi
-chmod +x /etc/xdg/labwc/autostart 2>/dev/null
+rm -f /etc/xdg/autostart/foxhunter-kiosk.desktop /etc/xdg/autostart/smashdeck-kiosk.desktop \
+      "$HOME_DIR/.config/autostart/foxhunter-kiosk.desktop" "$HOME_DIR/.config/autostart/smashdeck-kiosk.desktop"
 
 # panel theme if they exit kiosk
 [[ -f "$SRC/wf-panel-pi.ini" ]] && cp "$SRC/wf-panel-pi.ini" "$HOME_DIR/.config/wf-panel-pi.ini"

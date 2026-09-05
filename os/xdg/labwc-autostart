@@ -1,6 +1,3 @@
 #!/bin/sh
-# Fox Hunter OS — replaces /etc/xdg/labwc/autostart
 export GTK_A11Y=none
 export GTK_THEME=Adwaita-dark
-# kiosk only — start-kiosk restores a single panel when the HUD exits
-/opt/foxhunter/os/bin/start-kiosk
