@@ -1,3 +1,11 @@
 #!/bin/sh
+# Fox Hunter OS / SmashDeck Labwc desktop startup.
+#
+# Boot to the normal desktop. Do not run start-kiosk here.
+# The Fox Hunter kiosk is launched manually when needed.
+
 export GTK_A11Y=none
 export GTK_THEME=Adwaita-dark
+
+pcmanfm --desktop --profile LXDE-pi &
+wf-panel-pi &

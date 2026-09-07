@@ -6,13 +6,9 @@ Correct the SmashDeck OS startup configuration so the fullscreen dashboard kiosk
 
 ## Confirmed root cause
 
-Commit 2e10099 ("Do not autostart Fox Hunter; boot to desktop") already removes the duplicate kiosk autostart routes:
+The Labwc autostart template (`os/xdg/labwc-autostart`) previously contained a `start-kiosk` launch line despite commit 2e10099's intent to boot to the desktop. On the live Pi, `/etc/xdg/labwc/autostart` included `/opt/smashdeck/os/bin/start-kiosk`, causing the kiosk to auto-start at login and producing duplicate `wf-panel-pi` processes when `restore_panel()` ran after Chromium exited.
 
-- `os/apply-os.sh` no longer installs `smashdeck-kiosk.desktop` or `foxhunter-kiosk.desktop` into `/etc/xdg/autostart/` or `~/.config/autostart/`.
-- `os/bin/apply-desktop.sh` and `os/bin/fix-boot.sh` both remove any stale `start-kiosk` entries from `/etc/xdg/labwc/autostart` and user autostart files.
-- `os/desktop/labwc/autostart` and `os/xdg/labwc-autostart` no longer launch `start-kiosk` at login.
-
-The remaining defect is that `restore_panel()` in `os/bin/start-kiosk` can unnecessarily kill and restart a desktop panel that was already running before the kiosk started, producing duplicate taskbars when the user manually exits the kiosk.
+**Remediation**: The live Pi `/etc/xdg/labwc/autostart` was corrected to boot to the normal desktop with exactly one `wf-panel-pi` taskbar. The source-controlled template `os/xdg/labwc-autostart` has been updated to remove the `start-kiosk` line and instead launch `pcmanfm --desktop --profile LXDE-pi &` and `wf-panel-pi &` for a clean desktop session.
 
 ## Desired behavior
 
@@ -25,6 +21,7 @@ The remaining defect is that `restore_panel()` in `os/bin/start-kiosk` can unnec
 
 ## Scope
 
+- The Labwc autostart template (`os/xdg/labwc-autostart`) must not launch `start-kiosk` at boot.
 - Commit 2e10099 already removes the duplicate kiosk autostart routes (`smashdeck-kiosk.desktop`, `foxhunter-kiosk.desktop`, and `start-kiosk` from labwc autostart).
 - Make `restore_panel()` safe to call more than once by checking whether a panel is already running before starting one.
 - Do not modify Labwc autostart behavior or recreate any XDG `.desktop` kiosk autostart files.
@@ -49,6 +46,8 @@ Local source review:
 ```bash
 git diff --check
 bash -n os/bin/start-kiosk
+bash -n os/bin/apply-desktop.sh
+bash -n os/xdg/labwc-autostart
 ```
 
 Pi SSH validation:
@@ -71,8 +70,12 @@ Manual checks:
 ## Completion record
 
 - Branch: `fix/duplicate-kiosk-taskbar`
-- Root cause:
+- Root cause: obsolete Labwc autostart template still launched start-kiosk despite commit 2e10099's desktop-boot intent; live Pi remediation removed start-kiosk from /etc/xdg/labwc/autostart
 - Files changed:
+  - os/xdg/labwc-autostart — removed start-kiosk line; now boots to normal desktop with pcmanfm and wf-panel-pi
+  - os/bin/start-kiosk — restore_panel() made single-instance safe (pgrep check before starting panel)
+  - docs/tasks/fix-duplicate-kiosk-taskbar.md — updated behavior and scope
+  - CHANGELOG.md — added Unreleased/Fixed entry
 - Local validation:
 - First reboot result:
 - Second reboot result:
