@@ -85,6 +85,6 @@ Manual checks:
 - Final commits:
   - `f82bf04 fix(kiosk): prevent duplicate panel restoration`
   - `b56d696 fix(desktop): boot Labwc to single-panel desktop`
-  - `<REPLACE-WITH-NEXT-COMMIT> docs: record taskbar fix validation`
+  - `af1ce56 docs: record taskbar fix validation`
 - Merge date:
 - Release tag:
