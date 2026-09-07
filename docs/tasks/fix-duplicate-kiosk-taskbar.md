@@ -2,81 +2,44 @@
 
 ## Goal
 
-Correct the SmashDeck OS startup configuration so the fullscreen dashboard kiosk starts once and Raspberry Pi OS displays only one `wf-panel-pi` taskbar after the kiosk exits.
+Correct the SmashDeck OS startup configuration so the fullscreen dashboard kiosk does not auto-launch at login, and after manual kiosk exit, the desktop panel is restored safely without producing duplicates.
 
 ## Confirmed root cause
 
-The cyberdeck runs Labwc with one compositor process and two `wf-panel-pi` processes.
+Commit 2e10099 ("Do not autostart Fox Hunter; boot to desktop") already removes the duplicate kiosk autostart routes:
 
-The installed SmashDeck OS configuration starts `/opt/smashdeck/os/bin/start-kiosk` through more than one startup mechanism:
+- `os/apply-os.sh` no longer installs `smashdeck-kiosk.desktop` or `foxhunter-kiosk.desktop` into `/etc/xdg/autostart/` or `~/.config/autostart/`.
+- `os/bin/apply-desktop.sh` and `os/bin/fix-boot.sh` both remove any stale `start-kiosk` entries from `/etc/xdg/labwc/autostart` and user autostart files.
+- `os/desktop/labwc/autostart` and `os/xdg/labwc-autostart` no longer launch `start-kiosk` at login.
 
-1. Labwc system autostart:
-
-   ```text
-   /etc/xdg/labwc/autostart
-   ```
-
-   runs:
-
-   ```text
-   /opt/smashdeck/os/bin/start-kiosk
-   ```
-
-2. The SmashDeck installer also creates an XDG autostart entry:
-
-   ```text
-   /etc/xdg/autostart/smashdeck-kiosk.desktop
-   ```
-
-   and copies it into the active user’s autostart directory:
-
-   ```text
-   ~/.config/autostart/smashdeck-kiosk.desktop
-   ```
-
-Both routes execute `start-kiosk`. The script calls `restore_panel()` when the kiosk exits, and each concurrent instance can start `wf-panel-pi`. This produces duplicate taskbars.
+The remaining defect is that `restore_panel()` in `os/bin/start-kiosk` can unnecessarily kill and restart a desktop panel that was already running before the kiosk started, producing duplicate taskbars when the user manually exits the kiosk.
 
 ## Desired behavior
 
-- Labwc starts once.
-- The SmashDeck kiosk starts once at login.
-- The kiosk runs fullscreen without a panel covering the HUD.
-- When the kiosk closes, normal desktop behavior returns with exactly one panel.
-- Dashboard functionality and the prior Legion/SmashDeck update remain intact.
+- Boot to the normal Labwc desktop.
+- Start exactly one normal desktop panel (`wf-panel-pi` or `lxpanel`).
+- Do not auto-launch the Fox Hunter / SmashDeck kiosk at login.
+- Retain `start-kiosk` as a manual/explicit launcher (e.g., started from terminal or session script).
+- When the kiosk exits (Chromium closed), `restore_panel()` should only start a panel if no desktop panel is already running.
+- Dashboard functionality and the prior update remain intact.
 
 ## Scope
 
-- Make Labwc autostart the only canonical kiosk launch mechanism for Labwc systems.
-- Stop `apply-os.sh` from installing duplicate SmashDeck XDG kiosk launchers.
-- Remove existing SmashDeck-owned system and user XDG kiosk launchers during installation.
-- Make `restore_panel()` safe to call more than once.
-- Update documentation and change history.
-- Validate through two cyberdeck reboots.
-
-## Non-goals
-
-- Do not remove the kiosk feature.
+- Commit 2e10099 already removes the duplicate kiosk autostart routes (`smashdeck-kiosk.desktop`, `foxhunter-kiosk.desktop`, and `start-kiosk` from labwc autostart).
+- Make `restore_panel()` safe to call more than once by checking whether a panel is already running before starting one.
+- Do not modify Labwc autostart behavior or recreate any XDG `.desktop` kiosk autostart files.
 - Do not alter unrelated dashboard or Legion behavior.
 - Do not replace Labwc, Chromium, or the Pi OS desktop stack.
-- Do not modify unrelated desktop autostart entries.
-- Do not commit device credentials, operational logs, captures, or generated state.
-
-## Proposed code changes
-
-1. In `os/apply-os.sh`, replace installation of `smashdeck-kiosk.desktop` with removal of stale system and per-user copies.
-2. In `os/bin/start-kiosk`, make `restore_panel()` start a panel only if one is not already running.
-3. In `os/xdg/labwc-autostart`, document that Labwc is the canonical kiosk startup mechanism.
-4. Update this task record and the repository changelog.
 
 ## Acceptance criteria
 
 - [ ] The installer does not install `smashdeck-kiosk.desktop` in `/etc/xdg/autostart/`.
-- [ ] The installer removes old `smashdeck-kiosk.desktop` entries from `/etc/xdg/autostart/` and the selected user’s `~/.config/autostart/`.
-- [ ] The kiosk still starts at Labwc login.
-- [ ] After kiosk exit, no more than one `wf-panel-pi` process is running.
-- [ ] `pgrep -a wf-panel-pi` shows one process after the final test.
+- [ ] The installer removes old `smashdeck-kiosk.desktop` entries from `/etc/xdg/autostart/` and the selected user's `~/.config/autostart/`.
+- [ ] The kiosk does not auto-launch at login; `start-kiosk` is a manual launcher only.
+- [ ] After manual kiosk exit, no more than one `wf-panel-pi` process is running.
+- [ ] `pgrep -a wf-panel-pi` shows one process (or zero if no panel was previously running) after the final test.
 - [ ] The dashboard remains available at its expected local URL.
-- [ ] The Pi is rebooted twice and shows only one taskbar each time.
+- [ ] The Pi is rebooted twice and shows only one taskbar (or no taskbar if panel was previously absent) each time.
 - [ ] No unrelated behavior changes are introduced.
 
 ## Verification
@@ -85,7 +48,6 @@ Local source review:
 
 ```bash
 git diff --check
-bash -n os/apply-os.sh
 bash -n os/bin/start-kiosk
 ```
 
@@ -99,11 +61,12 @@ ps -o pid,ppid,user,stat,etime,args -C wf-panel-pi
 Manual checks:
 
 1. Reboot the Pi.
-2. Confirm the kiosk opens once.
-3. Exit the kiosk.
-4. Confirm exactly one taskbar is visible.
-5. Repeat after a second reboot.
-6. Confirm the dashboard and prior update functionality still work.
+2. Confirm the desktop boots without the kiosk auto-starting.
+3. Start the kiosk manually if desired.
+4. Exit the kiosk.
+5. Confirm exactly one taskbar is visible (or no taskbar if none was running before).
+6. Repeat after a second reboot.
+7. Confirm the dashboard and prior update functionality still work.
 
 ## Completion record
 
