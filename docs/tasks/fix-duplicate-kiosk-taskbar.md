@@ -70,16 +70,21 @@ Manual checks:
 ## Completion record
 
 - Branch: `fix/duplicate-kiosk-taskbar`
-- Root cause: obsolete Labwc autostart template still launched start-kiosk despite commit 2e10099's desktop-boot intent; live Pi remediation removed start-kiosk from /etc/xdg/labwc/autostart
+- Root cause: A stale Labwc autostart template launched `start-kiosk` despite commit `2e10099` intentionally changing the system to normal desktop boot. The kiosk startup path and the normal desktop startup sequence both manipulated `wf-panel-pi`, allowing duplicate taskbars. The kiosk `restore_panel()` function also restarted panels without checking whether one already existed.
 - Files changed:
-  - os/xdg/labwc-autostart — removed start-kiosk line; now boots to normal desktop with pcmanfm and wf-panel-pi
-  - os/bin/start-kiosk — restore_panel() made single-instance safe (pgrep check before starting panel)
-  - docs/tasks/fix-duplicate-kiosk-taskbar.md — updated behavior and scope
-  - CHANGELOG.md — added Unreleased/Fixed entry
+  - `os/bin/start-kiosk`
+  - `os/xdg/labwc-autostart`
+  - `docs/tasks/fix-duplicate-kiosk-taskbar.md`
 - Local validation:
-- First reboot result:
-- Second reboot result:
-- Dashboard verification:
-- Commit:
+  - `bash -n os/bin/start-kiosk` passed.
+  - `bash -n os/xdg/labwc-autostart` passed.
+  - `git diff --check` passed.
+- First reboot result: Passed. Pi booted to the normal desktop with exactly one visible taskbar and one `wf-panel-pi` process.
+- Second reboot result: Passed. `pgrep -a wf-panel-pi` returned exactly one process: PID `1126`.
+- Dashboard verification: Passed. `curl -I http://127.0.0.1:8080/` returned `HTTP/1.1 200 OK`.
+- Final commits:
+  - `f82bf04 fix(kiosk): prevent duplicate panel restoration`
+  - `b56d696 fix(desktop): boot Labwc to single-panel desktop`
+  - `<REPLACE-WITH-NEXT-COMMIT> docs: record taskbar fix validation`
 - Merge date:
 - Release tag:
