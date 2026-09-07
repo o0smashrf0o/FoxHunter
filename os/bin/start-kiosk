@@ -15,8 +15,11 @@ export WEBKIT_DISABLE_COMPOSITING_MODE=1
 export WEBKIT_DISABLE_DMABUF_RENDERER=1
 
 restore_panel() {
-  killall wf-panel-pi lxpanel 2>/dev/null
-  sleep 0.3
+  if pgrep -x wf-panel-pi >/dev/null 2>&1 || \
+     pgrep -x lxpanel >/dev/null 2>&1; then
+    return 0
+  fi
+
   if command -v wf-panel-pi >/dev/null 2>&1; then
     wf-panel-pi >/dev/null 2>&1 &
   elif command -v lxpanel >/dev/null 2>&1; then
