@@ -12,3 +12,5 @@ __pycache__/
 *.log
 
 os/stage-foxhunter/01-foxhunter/files/
+*.tmp
+*~

@@ -39,6 +39,8 @@ User data: `~/.local/share/foxhunter/`
 cd dashboard && python3 app.py   # http://localhost:8080
 ```
 
+[Development Workflow](docs/development-workflow.md) — full cycle from clone to release.
+
 ## Features
 
 | Area | Capabilities |
