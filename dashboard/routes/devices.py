@@ -106,3 +106,25 @@ def api_sources():
     except Exception as e:
         summary = {"error": str(e)}
     return jsonify({"settings": load_source_settings(), "detected": summary})
+
+
+@devices_bp.route("/api/bt_continuous_start", methods=["POST"])
+def api_bt_continuous_start():
+    data = request.get_json(silent=True) or {}
+    hci = data.get("hci") or None
+    result = bt_continuous_manager.start(hci=hci)
+    if not result["ok"]:
+        return jsonify(result), 409
+    return jsonify(result)
+
+
+@devices_bp.route("/api/bt_continuous_stop", methods=["POST"])
+def api_bt_continuous_stop():
+    result = bt_continuous_manager.stop()
+    return jsonify(result)
+
+
+@devices_bp.route("/api/bt_continuous_status", methods=["GET"])
+def api_bt_continuous_status():
+    result = bt_continuous_manager.status()
+    return jsonify(result)

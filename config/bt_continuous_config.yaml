@@ -1,0 +1,14 @@
+continuous_scan:
+  default_hci: "hci0"
+
+  scan_idle_seconds: 5
+  active_device_ttl_seconds: 300
+  observation_log_interval_seconds: 30
+  rssi_change_threshold_db: 8
+
+  log_relative_directory: "logs/bt_continuous"
+  rotate_daily: true
+  compress_after_days: 7
+  retention_days: 30
+  max_total_log_size_mb: 250
+  minimum_free_space_mb: 512

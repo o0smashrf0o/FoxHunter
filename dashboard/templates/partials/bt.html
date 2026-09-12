@@ -11,8 +11,10 @@
         <select id="bt-source"></select>
       </label>
       <button class="primary" type="button" onclick="scanBt()">Scan</button>
-      <button type="button" onclick="clearDevices('bt')">Clear</button>
+      <button class="primary" type="button" onclick="startContinuousBt()" disabled="disabled">Start Continuous Scan</button>
+      <button type="button" onclick="stopContinuousBt()" disabled="disabled">Stop Continuous Scan</button>
       <span id="bt-status" class="muted"></span>
+      <span id="bt-continuous-status" class="muted"></span>
     </div>
     <p class="muted">Tap a device for Info, Locate RSSI, Blue Sonar, l2ping, Pair. HCI only — not Ubertooth.</p>
     <div class="table-wrap">
