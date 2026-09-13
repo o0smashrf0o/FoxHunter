@@ -2,6 +2,7 @@
 from flask import Blueprint, jsonify, request
 
 from shared import DEVICE_CACHE, merge_devices, resolve_bt_hci, resolve_wifi_iface
+from utils.bt_continuous import bt_continuous_manager
 
 devices_bp = Blueprint("devices", __name__)
 

@@ -6,6 +6,7 @@ var currentBtSource = '';
 var currentBtContinuousSession = null;   // session_id from server
 var btContinuousHci = null;              // locked adapter, e.g. "hci0"
 var btContinuousState = "stopped";  // "stopped"|"starting"|"running"|"stopping"|"error"
+var btContinuousPollTimer = null;
 
 async function scanBt() {
   var st = document.getElementById('bt-status');
@@ -68,16 +69,35 @@ function renderBtTable() {
  * Continuous scan control
  * -------------------------------------------------------------- */
 
+function resolveBtSource() {
+  var sel = document.getElementById('bt-source');
+  var fromSel = '';
+  if (sel && sel.options && sel.options.length) {
+    var opt = sel.options[sel.selectedIndex >= 0 ? sel.selectedIndex : 0] || sel.options[0];
+    fromSel = (opt && opt.value) || '';
+    if (!fromSel && opt) {
+      fromSel = (opt.getAttribute('data-hci') || '').trim();
+    }
+    if (!fromSel && opt) {
+      var m = String(opt.textContent || '').match(/hci\d+/i);
+      if (m) fromSel = m[0].toLowerCase();
+    }
+  }
+  var src = currentBtSource || fromSel || (sel && sel.value) || '';
+  if (src) currentBtSource = src;
+  return src;
+}
+
 async function startContinuousBt() {
-  var src = (document.getElementById('bt-source') || {}).value || '';
+  var src = resolveBtSource();
   var st = document.getElementById('bt-status');
-  if (st) { st.textContent = 'Starting on ' + btContinuousHci + '…'; st.classList.add('scanning'); }
+  if (st) { st.textContent = 'Starting on ' + (src || btContinuousHci || '?') + '…'; st.classList.add('scanning'); }
   setHuntStatus('SCANNING', 'scan');
   try {
     var r = await fetch('/api/bt_continuous_start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hci: btContinuousHci || src })
+      body: JSON.stringify({ hci: src || btContinuousHci || '' })
     });
     var j = await r.json();
     if (st) st.classList.remove('scanning');
@@ -138,41 +158,69 @@ async function stopContinuousBt() {
   }
 }
 
-function updateContinuousUI() {
-  // Enable/Disable Start button
-  var startBtn = document.querySelector('button[onclick="startContinuousBt"]');
-  var stopBtn = document.querySelector('button[onclick="stopContinuousBt"]');
-  var sourceSel = document.getElementById('bt-source');
+function startContinuousDevicePoll() {
+  if (btContinuousPollTimer) return;
+  pollContinuousDevices();
+  btContinuousPollTimer = setInterval(pollContinuousDevices, 2000);
+}
 
-  if (btContinuousState === "stopped") {
-    if (startBtn) startBtn.disabled = false;
-    if (stopBtn) stopBtn.disabled = true;
-    if (sourceSel) sourceSel.disabled = false;
-    if (document.getElementById('bt-continuous-status')) {
-      document.getElementById('bt-continuous-status').textContent = 'Stopped';
+function stopContinuousDevicePoll() {
+  if (!btContinuousPollTimer) return;
+  clearInterval(btContinuousPollTimer);
+  btContinuousPollTimer = null;
+}
+
+async function pollContinuousDevices() {
+  if (btContinuousState !== 'running' && btContinuousState !== 'starting') {
+    stopContinuousDevicePoll();
+    return;
+  }
+  try {
+    var r = await fetch('/api/bt_continuous_devices');
+    var j = await r.json();
+    if (!j.ok) return;
+    if (!j.running) {
+      btContinuousState = 'stopped';
+      stopContinuousDevicePoll();
+      updateContinuousUI();
+      return;
     }
-    // Also set bt-status pill
-    if (document.getElementById('bt-status')) {
-      document.getElementById('bt-status').textContent = 'STATUS · Stopped';
-    }
+    btDevices = j.devices || [];
+    renderBtTable();
+    updateAcq('bt', btDevices, j.hci || btContinuousHci || '');
+    var c = document.getElementById('bt-acq-count');
+    if (c && j.active_device_count != null) c.textContent = String(j.active_device_count);
+  } catch (e) {}
+}
+
+function updateContinuousUI() {
+  var startBtn = document.getElementById('bt-continuous-start');
+  var stopBtn = document.getElementById('bt-continuous-stop');
+  var sourceSel = document.getElementById('bt-source');
+  var src = resolveBtSource();
+  var active = btContinuousState !== 'stopped';
+
+  if (startBtn) startBtn.disabled = active || !src;
+  if (stopBtn) stopBtn.disabled = !active;
+  if (sourceSel) sourceSel.disabled = active;
+  if (active) startContinuousDevicePoll();
+  else stopContinuousDevicePoll();
+
+  var contSt = document.getElementById('bt-continuous-status');
+  var btSt = document.getElementById('bt-status');
+  if (!active) {
+    if (contSt) contSt.textContent = 'Stopped';
+    if (btSt) btSt.textContent = 'STATUS · Stopped';
   } else {
-    if (startBtn) startBtn.disabled = true;
-    if (stopBtn) stopBtn.disabled = false;
-    if (sourceSel) sourceSel.disabled = true;
-    var statusText = '';
+    var statusText = btContinuousState;
     if (btContinuousHci) {
       statusText = btContinuousState === "starting" ? 'Starting on ' + btContinuousHci + '…' :
                    btContinuousState === "running" ? 'Running on ' + btContinuousHci :
                    btContinuousState === "stopping" ? 'Stopping hci' + btContinuousHci + '…' :
                    'Error: ' + btContinuousHci + ' unavailable';
     }
-    if (document.getElementById('bt-continuous-status')) {
-      document.getElementById('bt-continuous-status').textContent = statusText || btContinuousState;
-    }
-    // Also set bt-status pill
-    if (document.getElementById('bt-status')) {
-      document.getElementById('bt-status').textContent = 'STATUS · ' + (btContinuousHci || 'Stopped');
-    }
+    if (contSt) contSt.textContent = statusText || btContinuousState;
+    if (btSt) btSt.textContent = 'STATUS · ' + (btContinuousHci || 'Stopped');
   }
 }
 
@@ -190,10 +238,29 @@ document.addEventListener('DOMContentLoaded', function () {
         updateContinuousUI();
       }
     } catch (e) {
-      // If status fetch fails, UI stays in default stopped state
     }
+    updateContinuousUI();
   })();
 
-  // Existing table render
+  var srcSel = document.getElementById('bt-source');
+  if (srcSel) {
+    srcSel.addEventListener('change', updateContinuousUI);
+    if (typeof MutationObserver !== 'undefined') {
+      new MutationObserver(updateContinuousUI).observe(srcSel, { childList: true, subtree: true });
+    }
+  }
+  if (typeof loadLiveSources === 'function') {
+    var _loadLiveSources = loadLiveSources;
+    loadLiveSources = function () {
+      var ret = _loadLiveSources.apply(this, arguments);
+      if (ret && typeof ret.then === 'function') {
+        return ret.then(function (v) { updateContinuousUI(); return v; });
+      }
+      updateContinuousUI();
+      return ret;
+    };
+  }
+  setInterval(updateContinuousUI, 3000);
+
   if (typeof renderBtTable === 'function') renderBtTable();
 });

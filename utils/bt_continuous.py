@@ -212,6 +212,31 @@ class BTContinuousManager:
                 "logging_paused_low_storage": lpaused,
             }
 
+    def devices(self) -> Dict[str, Any]:
+        """Live continuous-scan device list for the dashboard table."""
+        with self._lock:
+            running = bool(self._running.is_set())
+            rows = []
+            for d in self._devices.values():
+                rows.append({
+                    "name": d.get("name") or "",
+                    "mac": d.get("mac") or "",
+                    "rssi_dbm": d.get("rssi_dbm"),
+                    "type": d.get("type") or "",
+                    "vendor": d.get("vendor") or "",
+                })
+            rows.sort(
+                key=lambda x: x.get("rssi_dbm") if x.get("rssi_dbm") is not None else -999,
+                reverse=True,
+            )
+            return {
+                "ok": True,
+                "running": running,
+                "hci": self._session_hci or "",
+                "active_device_count": len(self._devices),
+                "devices": rows,
+            }
+
     # ------------------------------------------------------------------
     # Background scan loop
     # ------------------------------------------------------------------

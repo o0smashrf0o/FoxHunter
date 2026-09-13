@@ -12,7 +12,7 @@ if PROJECT_ROOT not in sys.path:
 if DASHBOARD_DIR not in sys.path:
     sys.path.insert(0, DASHBOARD_DIR)
 
-from flask import Flask, redirect, render_template, request, session
+from flask import Flask, jsonify, redirect, render_template, request, session
 
 from routes.core import core_bp
 from routes.devices import devices_bp
@@ -70,6 +70,47 @@ def login():
 def logout():
     session.clear()
     return redirect("/login")
+
+
+@app.route("/api/bt_continuous_devices")
+def api_bt_continuous_devices():
+    from utils.bt_continuous import bt_continuous_manager
+    try:
+        st = bt_continuous_manager.status()
+    except Exception:
+        return jsonify({"ok": True, "running": False, "hci": "", "active_device_count": 0, "devices": []})
+    running = bool(st.get("running"))
+    rows = []
+    if running:
+        try:
+            lock = getattr(bt_continuous_manager, "_lock", None)
+            table = getattr(bt_continuous_manager, "_devices", None) or {}
+            if lock is not None:
+                with lock:
+                    items = list(table.values())
+            else:
+                items = list(table.values())
+            for d in items:
+                rows.append({
+                    "name": d.get("name") or "",
+                    "mac": d.get("mac") or "",
+                    "rssi_dbm": d.get("rssi_dbm"),
+                    "type": d.get("type") or "",
+                    "vendor": d.get("vendor") or "",
+                })
+            rows.sort(
+                key=lambda x: x.get("rssi_dbm") if x.get("rssi_dbm") is not None else -999,
+                reverse=True,
+            )
+        except Exception:
+            rows = []
+    return jsonify({
+        "ok": True,
+        "running": running,
+        "hci": st.get("hci") or "",
+        "active_device_count": len(rows) if running else 0,
+        "devices": rows,
+    })
 
 
 app.register_blueprint(core_bp)

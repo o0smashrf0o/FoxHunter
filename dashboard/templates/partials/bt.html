@@ -11,8 +11,8 @@
         <select id="bt-source"></select>
       </label>
       <button class="primary" type="button" onclick="scanBt()">Scan</button>
-      <button class="primary" type="button" onclick="startContinuousBt()" disabled="disabled">Start Continuous Scan</button>
-      <button type="button" onclick="stopContinuousBt()" disabled="disabled">Stop Continuous Scan</button>
+      <button class="primary" type="button" id="bt-continuous-start" onclick="startContinuousBt()" disabled="disabled">Start Continuous Scan</button>
+      <button type="button" id="bt-continuous-stop" onclick="stopContinuousBt()" disabled="disabled">Stop Continuous Scan</button>
       <span id="bt-status" class="muted"></span>
       <span id="bt-continuous-status" class="muted"></span>
     </div>
