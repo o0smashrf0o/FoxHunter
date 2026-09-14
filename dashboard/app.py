@@ -75,40 +75,30 @@ def logout():
 @app.route("/api/bt_continuous_devices")
 def api_bt_continuous_devices():
     from utils.bt_continuous import bt_continuous_manager
-    try:
-        st = bt_continuous_manager.status()
-    except Exception:
-        return jsonify({"ok": True, "running": False, "hci": "", "active_device_count": 0, "devices": []})
-    running = bool(st.get("running"))
-    rows = []
-    if running:
-        try:
-            lock = getattr(bt_continuous_manager, "_lock", None)
-            table = getattr(bt_continuous_manager, "_devices", None) or {}
-            if lock is not None:
-                with lock:
-                    items = list(table.values())
-            else:
+    st = bt_continuous_manager.status()
+    rows = st.get("devices")
+    if rows is None:
+        table = getattr(bt_continuous_manager, "_devices", None) or {}
+        lock = getattr(bt_continuous_manager, "_lock", None)
+        if lock is not None:
+            with lock:
                 items = list(table.values())
-            for d in items:
-                rows.append({
-                    "name": d.get("name") or "",
-                    "mac": d.get("mac") or "",
-                    "rssi_dbm": d.get("rssi_dbm"),
-                    "type": d.get("type") or "",
-                    "vendor": d.get("vendor") or "",
-                })
-            rows.sort(
-                key=lambda x: x.get("rssi_dbm") if x.get("rssi_dbm") is not None else -999,
-                reverse=True,
-            )
-        except Exception:
-            rows = []
+        else:
+            items = list(table.values())
+        rows = []
+        for d in items:
+            rows.append({
+                "name": d.get("name") or "",
+                "mac": d.get("mac") or "",
+                "rssi_dbm": d.get("rssi_dbm"),
+                "type": d.get("type") or "",
+                "vendor": d.get("vendor") or "",
+            })
     return jsonify({
         "ok": True,
-        "running": running,
+        "running": bool(st.get("running")),
         "hci": st.get("hci") or "",
-        "active_device_count": len(rows) if running else 0,
+        "active_device_count": st.get("active_device_count") if st.get("active_device_count") is not None else len(rows),
         "devices": rows,
     })
 
