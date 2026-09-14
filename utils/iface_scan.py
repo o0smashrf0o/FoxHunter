@@ -9,6 +9,54 @@ from typing import Any, Dict, List, Optional
 
 from utils.oui_lookup import vendor_name
 
+_MAC_RE = re.compile(r"^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$")
+_LOCAL_NAME_RE = re.compile(
+    r"(?:Complete Local Name|Short(?:ened)? Local Name)\s*[:\s]+(.+)$",
+    re.I,
+)
+_NAME_KEY_RE = re.compile(r"\bName:\s+(.+)$", re.I)
+_JUNK_NAME_RE = re.compile(
+    r"ManufacturerData|ServiceData|TxPower|Advertisement|\bUUID\b|"
+    r"^RSSI\b|\bRSSI:|Value:|0x[0-9a-fA-F]{4,}|\bTxPower\b",
+    re.I,
+)
+
+
+def bt_display_name(raw: str, mac: str = "") -> str:
+    """Broadcast name only: Complete/Shortened Local Name, then classic Name."""
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    mac_u = (mac or "").strip().upper()
+    picked = ""
+    for line in s.replace("\r", "\n").split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        m = _LOCAL_NAME_RE.search(line)
+        if m:
+            picked = m.group(1).strip()
+            break
+        m = _NAME_KEY_RE.search(line)
+        if m:
+            cand = m.group(1).strip()
+            if cand and not _JUNK_NAME_RE.search(cand):
+                picked = cand
+                break
+    if not picked:
+        picked = s.splitlines()[0].strip()
+    if mac_u and picked.upper() == mac_u:
+        return ""
+    if _MAC_RE.match(picked):
+        return ""
+    if _JUNK_NAME_RE.search(picked):
+        return ""
+    if re.search(r"[\n\r]", picked) or len(picked) > 80:
+        return ""
+    if re.fullmatch(r"[0-9A-Fa-f:xX\s-]+", picked) and len(picked) > 12:
+        return ""
+    return picked
+
 
 def _run(cmd: List[str], timeout: float = 20.0) -> tuple[int, str]:
     try:
@@ -108,7 +156,7 @@ def hcitool_scan_bt(hci: str = "hci0", limit: int = 50) -> List[Dict[str, Any]]:
         if not m:
             continue
         mac = m.group(1).upper()
-        name = m.group(2).strip()
+        name = bt_display_name(m.group(2).strip(), mac)
         devices[mac] = {
             "mac": mac,
             "name": name,
@@ -132,10 +180,11 @@ def hcitool_scan_bt(hci: str = "hci0", limit: int = 50) -> List[Dict[str, Any]]:
             continue
         mac = m.group(1).upper()
         rest = (m.group(2) or "").strip()
+        name = bt_display_name(rest, mac)
         if mac not in devices:
             devices[mac] = {
                 "mac": mac,
-                "name": rest or mac,
+                "name": name,
                 "rssi_dbm": None,
                 "type": "ble",
                 "vendor": vendor_name(mac),
@@ -145,8 +194,8 @@ def hcitool_scan_bt(hci: str = "hci0", limit: int = 50) -> List[Dict[str, Any]]:
                 "source": f"ble:{hci}",
             }
         else:
-            if rest and rest != mac:
-                devices[mac]["name"] = rest
+            if name:
+                devices[mac]["name"] = name
         rm = re.search(r"RSSI[:\s]+(-?\d+)", line, re.I)
         if rm:
             devices[mac]["rssi_dbm"] = int(rm.group(1))

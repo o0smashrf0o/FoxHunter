@@ -12,6 +12,7 @@ from __future__ import annotations
 import errno
 import json
 import os
+import re
 import shutil
 import time
 import threading
@@ -23,6 +24,31 @@ from typing import Any, Dict, List, Optional, Tuple
 from utils.paths import DATA_DIR, BT_CONTINUOUS_DIR, ensure_data_dirs
 from utils.iface_scan import hcitool_scan_bt
 from dashboard.shared import DEVICE_CACHE
+
+_JUNK_NAME_RE = re.compile(
+    r"ManufacturerData|ServiceData|TxPower|\bRSSI\b|Value:|Advertisement|0x[0-9a-fA-F]{4,}",
+    re.I,
+)
+_NAME_KEY_RE = re.compile(
+    r"(?:Complete Local Name|Short(?:ened)? Local Name|\bName)\s*:\s*(.+)$",
+    re.I,
+)
+
+
+def _clean_bt_name(raw: str, mac: str = "") -> str:
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    s = s.splitlines()[0].strip()
+    m = _NAME_KEY_RE.search(s)
+    if m:
+        s = m.group(1).strip()
+    if mac and s.upper() == str(mac).upper():
+        return ""
+    if _JUNK_NAME_RE.search(s):
+        return ""
+    return s[:80]
+
 
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config" / "bt_continuous_config.yaml"
 
@@ -193,34 +219,13 @@ class BTContinuousManager:
                 )
 
             lpaused = self._logging_paused and self._pause_reason == "low_storage"
-
-            return {
-                "ok": True,
-                "running": running,
-                "status": "running" if running else "stopped",
-                "session_id": self._session_id or "",
-                "hci": self._session_hci or "",
-                "source_locked": running,
-                "started_at": started_iso,
-                "active_device_count": len(self._devices),
-                "last_cycle_at": (
-                    datetime.fromtimestamp(time.time(), tz=timezone.utc).isoformat()
-                    if running
-                    else ""
-                ),
-                "last_error": self._last_error if running else None,
-                "logging_paused_low_storage": lpaused,
-            }
-
-    def devices(self) -> Dict[str, Any]:
-        """Live continuous-scan device list for the dashboard table."""
-        with self._lock:
-            running = bool(self._running.is_set())
             rows = []
             for d in self._devices.values():
+                mac = d.get("mac") or ""
+                name = _clean_bt_name(d.get("name") or "", mac)
                 rows.append({
-                    "name": d.get("name") or "",
-                    "mac": d.get("mac") or "",
+                    "name": name,
+                    "mac": mac,
                     "rssi_dbm": d.get("rssi_dbm"),
                     "type": d.get("type") or "",
                     "vendor": d.get("vendor") or "",
@@ -232,10 +237,31 @@ class BTContinuousManager:
             return {
                 "ok": True,
                 "running": running,
+                "status": "running" if running else "stopped",
+                "session_id": self._session_id or "",
                 "hci": self._session_hci or "",
+                "source_locked": running,
+                "started_at": started_iso,
                 "active_device_count": len(self._devices),
                 "devices": rows,
+                "last_cycle_at": (
+                    datetime.fromtimestamp(time.time(), tz=timezone.utc).isoformat()
+                    if running
+                    else ""
+                ),
+                "last_error": self._last_error if running else None,
+                "logging_paused_low_storage": lpaused,
             }
+
+    def devices(self) -> Dict[str, Any]:
+        snap = self.status()
+        return {
+            "ok": True,
+            "running": bool(snap.get("running")),
+            "hci": snap.get("hci") or "",
+            "active_device_count": snap.get("active_device_count") or 0,
+            "devices": snap.get("devices") or [],
+        }
 
     # ------------------------------------------------------------------
     # Background scan loop
@@ -321,7 +347,7 @@ class BTContinuousManager:
             if not mac:
                 continue
 
-            name = d.get("name") or ""
+            name = _clean_bt_name(d.get("name") or "", mac)
             rssi_dbm = d.get("rssi_dbm")
             dev_type = d.get("type") or "classic"
             vendor = d.get("vendor") or ""
@@ -359,9 +385,10 @@ class BTContinuousManager:
                     "type": dev_type, "vendor": vendor,
                 })
 
-                # Update device fields unconditionally (active table)
-                dev["name"] = name
-                dev["rssi_dbm"] = rssi_dbm
+                if name:
+                    dev["name"] = name
+                if rssi_dbm is not None:
+                    dev["rssi_dbm"] = rssi_dbm
                 dev["type"] = dev_type
                 dev["vendor"] = vendor
                 dev["last_seen"] = now
