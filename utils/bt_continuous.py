@@ -49,6 +49,7 @@ def _clean_bt_name(raw: str, mac: str = "") -> str:
         return ""
     return s[:80]
 
+
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config" / "bt_continuous_config.yaml"
 
 DEFAULTS = {
@@ -260,7 +261,7 @@ class BTContinuousManager:
             "hci": snap.get("hci") or "",
             "active_device_count": snap.get("active_device_count") or 0,
             "devices": snap.get("devices") or [],
-            }
+        }
 
     # ------------------------------------------------------------------
     # Background scan loop
