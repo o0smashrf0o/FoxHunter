@@ -74,6 +74,33 @@ async function scanWifi() {
 
 var _wifiContTimer = null;
 
+var _wifiPCAPTimer = null;
+var _wifiPCAPRunning = false;
+var _wifiPCAPFile = "";
+
+// Load pcap status on page load
+async function loadWifiPcapStatus() {
+  try {
+    var r = await fetch('/api/wifi_pcap_status');
+    var j = await r.json();
+    if (j.ok) {
+      var statusEl = document.getElementById('wifi-pcap-status');
+      var toggleEl = document.getElementById('wifi-pcap-toggle');
+      var fileEl = document.getElementById('wifi-pcap-file');
+      if (statusEl) {
+        statusEl.textContent = j.running ? 'Recording' : 'Idle';
+      }
+      if (toggleEl) {
+        toggleEl.disabled = !j.env || j.env !== "1";
+        toggleEl.textContent = j.running ? 'Stop' : 'PCap';
+      }
+      if (fileEl) {
+        fileEl.textContent = j.last_file || '';
+      }
+    }
+  } catch (e) {}
+}
+
 async function syncWifiContinuousBtn() {
   var btn = document.getElementById('wifi-continuous');
   var wrap = document.getElementById('wifi-cont-wrap');
@@ -98,7 +125,53 @@ function stopWifiContinuous() {
   setHuntStatus('IDLE', 'idle');
 }
 
-async function toggleWifiContinuous() {
+async function toggleWifiPcap() {
+  var btn = document.getElementById('wifi-pcap-toggle');
+  if (_wifiPCAPRunning) {
+    stopWifiPcap();
+    return;
+  }
+  if (btn && btn.disabled) return;
+  var src = (document.getElementById('wifi-source') || {}).value || '';
+  if (!(await ensureWifiCapture(src))) return;
+  if (btn) { btn.textContent = 'Stop'; btn.classList.add('toggle-on'); }
+  setHuntStatus('HUNTING', 'scan');
+  await wifiPcapTick();
+  _wifiPCAPTimer = setInterval(wifiPcapTick, 1000);
+  _wifiPCAPRunning = true;
+}
+
+function stopWifiPcap() {
+  if (_wifiPCAPTimer) { clearInterval(_wifiPCAPTimer); _wifiPCAPTimer = null; }
+  var btn = document.getElementById('wifi-pcap-toggle');
+  if (btn) { btn.classList.remove('toggle-on'); btn.textContent = 'PCap'; }
+  setHuntStatus('IDLE', 'idle');
+  _wifiPCAPRunning = false;
+}
+
+async function wifiPcapTick() {
+  var st = document.getElementById('wifi-status');
+  try {
+    var src = (document.getElementById('wifi-source') || {}).value || '';
+    var r = await fetch('/api/kismet_devices_live?source=' + encodeURIComponent(src));
+    var j = await r.json();
+    if (!j.ok && !j.devices) {
+      stopWifiPcap();
+      await syncWifiContinuousBtn();
+      return;
+    }
+    wifiDevices = (j.devices || []).filter(function (d) {
+      return d.type === 'wifi' || d.ssid || (d.mac && d.type !== 'bt');
+    });
+    renderWifiTable();
+    updateAcq('wifi', wifiDevices, j.iface || src || 'kismet');
+    if (st) st.textContent = 'Kismet live · ' + (j.iface || src || '?') + ' · ' + wifiDevices.length + ' device(s)';
+  } catch (e) {
+    if (st) st.textContent = e.message;
+  }
+}
+
+function renderWifiTable() {
   var btn = document.getElementById('wifi-continuous');
   if (btn && btn.disabled) return;
   if (_wifiContTimer) { stopWifiContinuous(); return; }
@@ -150,7 +223,7 @@ function renderWifiTable() {
       + '<td>' + escHtml(d.vendor || '') + '</td>'
       + '</tr>';
   });
-  tb.innerHTML = rows;
+tb.innerHTML = rows;
   tb.querySelectorAll('tr').forEach(function (tr) {
     tr.addEventListener('click', function () {
       var d = wifiDevices[Number(tr.getAttribute('data-idx'))];
@@ -158,5 +231,7 @@ function renderWifiTable() {
         openDetailPanel('wifi', d, (document.getElementById('wifi-source') || {}).value || '');
       }
     });
+  });
+}
   });
 }
