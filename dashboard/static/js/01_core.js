@@ -128,6 +128,10 @@ document.addEventListener('DOMContentLoaded', function () {
     syncWifiContinuousBtn();
     setInterval(syncWifiContinuousBtn, 4000);
   }
+  if (typeof loadWifiPcapStatus === 'function') {
+    loadWifiPcapStatus();
+    setInterval(loadWifiPcapStatus, 5000);
+  }
 });
 
 function _fillSourceSelect(sel, items, valueOf, labelOf) {

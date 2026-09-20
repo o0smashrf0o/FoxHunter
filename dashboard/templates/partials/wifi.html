@@ -18,6 +18,11 @@
       <button type="button" onclick="clearDevices('wifi')">Clear</button>
       <span id="wifi-status" class="muted"></span>
     </div>
+    <div class="row" style="align-items:center;padding-top:0.5rem;">
+      <span class="muted" id="wifi-pcap-status">Idle</span>
+      <button class="secondary" type="button" id="wifi-pcap-toggle" disabled onclick="toggleWifiPcap()">PCap</button>
+      <span class="muted" id="wifi-pcap-file" style="margin-left:1rem;"></span>
+    </div>
     <div class="table-wrap">
       <table class="grid" id="wifi-table">
         <thead>

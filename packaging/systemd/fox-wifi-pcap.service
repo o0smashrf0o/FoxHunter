@@ -1,0 +1,20 @@
+[Unit]
+Description=Fox Hunter Wi-Fi pcap recorder
+After=kismet.service
+Wants=kismet.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -u /opt/foxhunter/utils/fox_wifi_pcap.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=FOX_HUNTER_ENV=/opt/foxhunter/fox_hunter.env
+EnvironmentFile=-/opt/foxhunter/fox_hunter.env
+ProtectHome=read-only
+ReadWritePaths=/home/smash/logs/kismet/pcap
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
