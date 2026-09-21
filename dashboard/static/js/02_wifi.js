@@ -171,10 +171,13 @@ async function wifiPcapTick() {
   }
 }
 
-function renderWifiTable() {
+async function toggleWifiContinuous() {
+  if (_wifiContTimer) {
+    stopWifiContinuous();
+    return;
+  }
   var btn = document.getElementById('wifi-continuous');
   if (btn && btn.disabled) return;
-  if (_wifiContTimer) { stopWifiContinuous(); return; }
   var src = (document.getElementById('wifi-source') || {}).value || '';
   if (!(await ensureWifiCapture(src))) return;
   if (btn) { btn.textContent = 'Stop cont.'; btn.classList.add('toggle-on'); }
