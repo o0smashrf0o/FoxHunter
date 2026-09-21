@@ -77,10 +77,16 @@ class KismetClient:
     def list_devices(self, limit: int = 100) -> List[Dict[str, Any]]:
         if not self.is_port_open():
             return []
-        try:
-            raw = self._get(f"/devices/summary/devices.json")
-        except Exception:
-            return []
+        raw = None
+        for path in ("/devices/last-time/0/devices.json", "/devices/summary/devices.json"):
+            try:
+                raw = self._get(path)
+            except Exception:
+                raw = None
+            if raw:
+                break
+        if isinstance(raw, dict):
+            raw = raw.get("devices") or raw.get("results") or raw.get("data") or []
         if not isinstance(raw, list):
             return []
         out = []
@@ -91,12 +97,18 @@ class KismetClient:
             name = d.get("kismet.device.base.name") or d.get("kismet.device.base.commonname") or ""
             ssid = ""
             try:
-                ssid = (
-                    (d.get("dot11.device.last_beaconed_ssid_record") or {}).get("dot11.advertisedssid.ssid")
-                    or ""
-                )
+                rec = d.get("dot11.device.last_beaconed_ssid_record") or {}
+                if isinstance(rec, dict):
+                    ssid = rec.get("dot11.advertisedssid.ssid") or rec.get("ssid") or ""
+                dot11 = d.get("dot11.device") or {}
+                if isinstance(dot11, dict):
+                    ssid = ssid or dot11.get("dot11.device.last_beaconed_ssid") or ""
+                    rec2 = dot11.get("dot11.device.last_beaconed_ssid_record") or {}
+                    if isinstance(rec2, dict):
+                        ssid = ssid or rec2.get("dot11.advertisedssid.ssid") or ""
+                ssid = ssid or d.get("kismet.device.base.commonname") or ""
             except Exception:
-                pass
+                ssid = ""
             rssi = d.get("kismet.device.base.signal", {})
             if isinstance(rssi, dict):
                 rssi = rssi.get("kismet.common.signal.last_signal")
