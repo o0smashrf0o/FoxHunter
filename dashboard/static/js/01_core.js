@@ -73,7 +73,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(function (t) {
     t.classList.toggle('active', t.getAttribute('data-tab') === name);
   });
-  if (name === 'wifi' || name === 'bt' || name === 'hunt') loadLiveSources();
+  if (name === 'wifi' || name === 'bt' || name === 'hunt' || name === 'kismet') loadLiveSources();
   if (name === 'wifi' && typeof syncWifiContinuousBtn === 'function') syncWifiContinuousBtn();
   if (name === 'detect' && typeof loadDetectCapabilities === 'function') loadDetectCapabilities();
   if (name === 'findings' && typeof loadFindings === 'function') loadFindings();
@@ -134,12 +134,46 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
-function _fillSourceSelect(sel, items, valueOf, labelOf) {
+function setCaptureSource(iface) {
+  if (window._sourceLocked) return;
+  window._captureSource = (iface || '').trim();
+  ['wifi-source', 'kismet-source'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el && el.value !== window._captureSource) el.value = window._captureSource;
+  });
+  applyCaptureLock({ running: false, source_locked: false });
+}
+
+function applyCaptureLock(j) {
+  j = j || {};
+  var locked = !!j.source_locked || !!j.running;
+  window._sourceLocked = locked;
+  if (locked && j.selected_source) window._captureSource = j.selected_source;
+  ['wifi-source', 'kismet-source'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = locked;
+    if (locked && j.selected_source) el.value = j.selected_source;
+  });
+  var known = (window._captureSource || '').trim();
+  var label = locked
+    ? (j.selected_source ? ('Capture source: ' + j.selected_source) : 'Capture source: locked. Stop Kismet before changing source.')
+    : (known ? ('Capture source: ' + known) : 'Capture source: none selected');
+  ['wifi-active-source', 'kismet-active-source'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+  var start = document.getElementById('kismet-start');
+  if (start) start.disabled = locked || !known;
+}
+
+function _fillSourceSelect(sel, items, valueOf, labelOf, placeholder) {
   if (!sel) return;
-  var prev = sel.value;
+  var prev = (placeholder ? (window._captureSource || sel.value || '') : sel.value);
   var next = (items || []).map(function (it) {
     return { v: valueOf(it), l: labelOf(it) };
   });
+  if (placeholder) next = [{ v: '', l: 'Select source…' }].concat(next);
   var same = sel.options.length === next.length;
   if (same) {
     for (var i = 0; i < next.length; i++) {
@@ -148,7 +182,10 @@ function _fillSourceSelect(sel, items, valueOf, labelOf) {
       }
     }
   }
-  if (same) return;
+  if (same) {
+    if (placeholder) sel.disabled = !!window._sourceLocked;
+    return;
+  }
   sel.innerHTML = '';
   next.forEach(function (o) {
     var opt = document.createElement('option');
@@ -156,7 +193,11 @@ function _fillSourceSelect(sel, items, valueOf, labelOf) {
     opt.textContent = o.l;
     sel.appendChild(opt);
   });
-  if (prev) {
+  if (placeholder) {
+    sel.value = prev;
+    if (sel.value !== prev) sel.value = '';
+    sel.disabled = !!window._sourceLocked;
+  } else if (prev) {
     for (var j = 0; j < sel.options.length; j++) {
       if (sel.options[j].value === prev) { sel.selectedIndex = j; break; }
     }
@@ -184,23 +225,21 @@ async function loadLiveSources() {
         ssid: d.ssid || ''
       };
     });
-    _fillSourceSelect(
-      document.getElementById('wifi-source'),
-      wifiItems,
-      function (d) { return d.iface || d.id || d._key; },
-      function (d) {
-        var iface = d.iface || d.id || d._key;
-        var label = iface;
-        Object.keys(named).forEach(function (k) {
-          if (named[k].iface === iface) label = named[k].label + ' (' + iface + ')';
-        });
-        if (d.model && d.model !== iface) label = d.model + ' (' + iface + ')';
-        if (d.connected || d.internet) {
-          label += d.ssid ? (' — AP: ' + d.ssid) : ' — in use for internet';
-        }
-        return label;
+    var wifiValue = function (d) { return d.iface || d.id || d._key; };
+    var wifiLabel = function (d) {
+      var iface = d.iface || d.id || d._key;
+      var label = iface;
+      Object.keys(named).forEach(function (k) {
+        if (named[k].iface === iface) label = named[k].label + ' (' + iface + ')';
+      });
+      if (d.model && d.model !== iface) label = d.model + ' (' + iface + ')';
+      if (d.connected || d.internet) {
+        label += d.ssid ? (' — AP: ' + d.ssid) : ' — in use for internet';
       }
-    );
+      return label;
+    };
+    _fillSourceSelect(document.getElementById('wifi-source'), wifiItems, wifiValue, wifiLabel, true);
+    _fillSourceSelect(document.getElementById('kismet-source'), wifiItems, wifiValue, wifiLabel, true);
     var namedBt = settings.bt_sources || {};
     var bts = det.bt || [];
     var btItems = bts.length ? bts : Object.keys(namedBt).map(function (k) {

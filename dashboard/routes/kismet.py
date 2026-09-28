@@ -15,10 +15,18 @@ def status():
 @kismet_bp.route("/api/kismet_start", methods=["POST"])
 def start():
     data = request.get_json(silent=True) or {}
-    src = data.get("source") or ""
-    from utils.kismet.client import ensure_kismet
+    src = (data.get("source") or "").strip()
+    if not src:
+        return jsonify({"ok": False, "error": "Select a capture source"}), 400
+    from utils.kismet.client import ensure_kismet, get_locked_source
     ok, msg = ensure_kismet(src)
-    return jsonify({"ok": ok, "msg": msg})
+    body = {"ok": ok, "msg": msg, "selected_source": get_locked_source()}
+    if ok:
+        return jsonify(body)
+    body["error"] = msg
+    if "Stop Kismet before changing source" in msg:
+        return jsonify(body), 409
+    return jsonify(body)
 
 
 @kismet_bp.route("/api/kismet_devices_live")

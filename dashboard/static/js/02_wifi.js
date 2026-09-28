@@ -110,6 +110,7 @@ async function syncWifiContinuousBtn() {
     var r = await fetch('/api/kismet_status');
     var j = await r.json();
     running = !!j.running;
+    if (typeof applyCaptureLock === 'function') applyCaptureLock(j);
   } catch (e) {}
   if (_wifiContTimer && !running) stopWifiContinuous();
   btn.disabled = !running && !_wifiContTimer;

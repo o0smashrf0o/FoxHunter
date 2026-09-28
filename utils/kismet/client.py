@@ -53,7 +53,7 @@ class KismetClient:
 
     def system_status(self) -> Dict[str, Any]:
         if not self.is_port_open():
-            return {"running": False, "console": _log_tail(), "web": self.base}
+            return _annotate_lock({"running": False, "console": _log_tail(), "web": self.base}, False)
         try:
             st = self._get("/system/status.json")
             if not isinstance(st, dict):
@@ -63,16 +63,22 @@ class KismetClient:
                 sources = self.list_sources() or []
             except Exception:
                 pass
-            return {
+            return _annotate_lock({
                 "running": True,
                 "status": st,
                 "sources": sources,
                 "summary": _status_summary(st, sources),
                 "console": _log_tail(),
                 "web": self.base,
-            }
+            }, True)
         except Exception as e:
-            return {"running": self.is_port_open(), "error": str(e), "console": _log_tail(), "web": self.base}
+            running = self.is_port_open()
+            return _annotate_lock({
+                "running": running,
+                "error": str(e),
+                "console": _log_tail(),
+                "web": self.base,
+            }, running)
 
     def list_devices(self, limit: int = 100) -> List[Dict[str, Any]]:
         if not self.is_port_open():
@@ -211,21 +217,33 @@ def get_client() -> KismetClient:
     return _client
 
 
+_locked_source = ""
+
+
+def get_locked_source() -> str:
+    return _locked_source
+
+
+def _iface_of(src: str) -> str:
+    return (src or "").split(":")[0].strip()
+
+
+def _annotate_lock(payload: Dict[str, Any], running: bool) -> Dict[str, Any]:
+    global _locked_source
+    if not running:
+        _locked_source = ""
+    payload["selected_source"] = _locked_source
+    payload["source_locked"] = bool(running)
+    return payload
+
+
 def source_def(src: str = "") -> str:
     src = (src or "").strip()
-    if src:
-        if ":" in src:
-            return src
-        return f"{src}:name={src}"
-    try:
-        from utils.device_detector import get_device_summary
-        for d in get_device_summary().get("wifi") or []:
-            iface = d.get("iface") or d.get("id") or ""
-            if iface and iface != "wlan0":
-                return f"{iface}:name={iface}"
-    except Exception:
-        pass
-    return ""
+    if not src:
+        return ""
+    if ":" in src:
+        return src
+    return f"{src}:name={src}"
 
 
 def stop_kismet() -> Tuple[bool, str]:
@@ -250,30 +268,32 @@ def stop_kismet() -> Tuple[bool, str]:
     c = get_client()
     for _ in range(20):
         if not c.is_port_open():
+            global _locked_source
+            _locked_source = ""
             return True, "Kismet stopped"
         time.sleep(0.25)
     return False, "Kismet still running\n" + "\n".join(notes)
 
 
 def ensure_kismet(extra_source: str = "") -> Tuple[bool, str]:
-    """Start kismet as a daemon and keep it running."""
-    c = get_client()
+    """Start kismet as a daemon on one explicit source. Never pick a fallback."""
+    global _locked_source
     src = source_def(extra_source)
+    if not src:
+        return False, "Select a capture source"
+    c = get_client()
+    iface = _iface_of(src)
     if c.is_port_open():
-        if src:
-            c.ensure_source(src)
-        return True, "Kismet already running" + (f" source={src}" if src else "")
+        if _locked_source and _locked_source == iface:
+            return True, "Kismet already running" + f" source={src}"
+        return False, "Stop Kismet before changing source."
     ensure_data_dirs()
     log = KISMET_DIR / "kismet_launch.log"
     homedir = str(KISMET_DIR)
-    base = ["--no-ncurses", "--daemonize"]
-    if src:
-        base += ["-c", src]
+    base = ["--no-ncurses", "--daemonize", "-c", src]
     attempts = [
         ["sudo", "-n", "kismet"] + base,
         ["kismet"] + base,
-        ["sudo", "-n", "kismet", "--no-ncurses"],
-        ["kismet", "--no-ncurses"],
     ]
     last_err = "kismet not installed"
     logf = open(log, "a")
@@ -298,8 +318,7 @@ def ensure_kismet(extra_source: str = "") -> Tuple[bool, str]:
         for _ in range(30):
             time.sleep(0.4)
             if c.is_port_open():
-                if src:
-                    c.ensure_source(src)
-                return True, "Kismet started" + (f" source={src}" if src else "")
+                _locked_source = iface
+                return True, "Kismet started" + f" source={src}"
         last_err = "Kismet start timeout — see data/kismet/kismet_launch.log"
     return False, last_err

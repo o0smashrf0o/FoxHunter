@@ -5,6 +5,7 @@ async function kismetStatus() {
     var r = await fetch('/api/kismet_status');
     var j = await r.json();
     renderKismetConsole(j);
+    if (typeof applyCaptureLock === 'function') applyCaptureLock(j);
     if (el) el.textContent = j.running ? 'Running' : 'Stopped';
     if (el) el.style.color = j.running ? 'var(--accent)' : 'var(--muted)';
     return j;
@@ -63,12 +64,20 @@ function renderKismetConsole(j) {
 }
 
 function kismetWifiSource() {
-  return ((document.getElementById('wifi-source') || {}).value || '').trim();
+  return (window._captureSource || (document.getElementById('kismet-source') || {}).value || (document.getElementById('wifi-source') || {}).value || '').trim();
 }
 
 async function kismetStart() {
   var el = document.getElementById('kismet-status');
+  if (window._sourceLocked) {
+    if (el) el.textContent = 'Stop Kismet before changing source.';
+    return;
+  }
   var src = kismetWifiSource();
+  if (!src) {
+    if (el) el.textContent = 'Select a capture source';
+    return;
+  }
   if (typeof ensureWifiCapture === 'function' && !(await ensureWifiCapture(src))) {
     if (el) el.textContent = 'Cancelled';
     return;
@@ -77,11 +86,11 @@ async function kismetStart() {
   try {
     var r = await fetch('/api/kismet_start', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ source: kismetWifiSource() })
+      body: JSON.stringify({ source: src })
     });
     var j = await r.json();
     if (el) {
-      el.textContent = j.msg || (j.ok ? 'Started' : 'Failed');
+      el.textContent = j.error || j.msg || (j.ok ? 'Started' : 'Failed');
       el.style.color = j.ok ? 'var(--accent)' : 'var(--danger)';
     }
     if (typeof syncWifiContinuousBtn === 'function') syncWifiContinuousBtn();
